@@ -1,0 +1,414 @@
+---
+title: "Assignment 1"
+author: "Ferrara Lorenzo, Lucchini Marco"
+output:
+  html_document:
+    df_print: paged
+---
+
+## Description
+#### The data were collected during a study of the settlement pattern of common terns on a small islet in the Delta d’Ebre (Hernandez and Ruiz, range3), particularly in the mouths of the Ebre river. The islet was inspected at two-day intervals throughout the range0 breeding season. The data include the location of each nest, its elevation above sea level, and elevations at a number of additional points (points without nest) on the islet. In the file called elevationsIslet.txt, contains the information of the coordinates and elevation above sea, and in file, called poly84.txt contains the coordinates of the borders of the islet. The aim is to predict the elevation above sea level along the small islet using a kriging interpolation. 
+
+```{r eval=FALSE, include=FALSE}
+load("~/GitHub/Epidemiology_Assignment_1/.RData")
+```
+
+```{r}
+poly84 <- read.delim("poly84.txt")
+names(poly84)= c("x", "y", "data")
+head(poly84)
+elevationsIslet <- read.delim("elevationsIslet.txt")
+head(elevationsIslet)
+```
+
+#### 1) Explore the requirement of stationary mean of the process. In case this requirement is not meet, detrend the data to ensure that the process is stationary in mean. Discuss the results and show the plot of the results
+
+Firstly, we plot the locations.
+
+```{r}
+library(geoR)
+library(gstat)
+# library(lattice)
+library(sp)
+```
+
+```{r}
+dataset = elevationsIslet
+data_for_bubble = dataset
+coordinates(data_for_bubble) <- c('x','y')
+bubble(data_for_bubble,'data',do.log=TRUE,key.space='bottom')
+rm(data_for_bubble)
+```
+
+```{R}
+geodataset <- as.geodata(dataset)
+plot(geodataset)
+```
+The process doesn't seem stationary, indeed there is clearly a quadratic trend along the x direction. In addition we try using the y direction as regressor, to find a possible linear or quadratic trend.
+
+```{r}
+lm <- lm(data ~ x + y + I(x^2) + I(y^2), data = dataset)
+summary(lm)
+```
+
+The linear term in y doesn't seem significant, so we remove it.
+
+```{r}
+lm <- lm(data ~ x + I(x^2) + I(y^2), data = dataset)
+summary(lm)
+```
+
+Now we save the residuals of our linear model and look at the de-trended data.
+```{r}
+residuals <- round(residuals(lm), digits = 3)
+dataset.new <- cbind(dataset, residuals)
+head(dataset.new)
+```
+
+```{r}
+geodataset.residuals <- as.geodata(dataset.new, data.col = 4)
+plot(geodataset.residuals)
+```
+This new dataset seems stationary!
+Now the data seems distributed around 0.are str
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+
+#### 2) Explore the spatial dependence of the elevation variable using the variogram cloud and bins and the empirical variogram. Discuss the results and plot them
+
+### Variogram Could
+```{r}
+vario.cloud.classical <- variog(geodata = geodataset.residuals, option = "cloud", estimator.type = "classical")
+plot(vario.cloud.classical, main = "CLOUD", cex.main = 1, cex.lab = 1)
+```
+
+The variability at small distances appears a bit greater than that for larger distances. 
+
+```{r}
+dist.max.data <- max(dist(cbind(dataset.new$x, dataset.new$y)))
+#maximum distances between points
+
+vario.cloud.classical <- variog(geodata = geodataset.residuals,option = "cloud", estimator.type = "classical", max.dist = dist.max.data/2)
+
+plot(vario.cloud.classical, main = "CLOUD", cex.main = 1, cex.lab = 1)
+```
+
+```{r}
+dist.max.data <- max(dist(cbind(dataset.new$x, dataset.new$y)))
+
+vario.bc.classical <- variog(geodata = geodataset.residuals, option = "bin",bin.cloud = TRUE, pairs.min = 30, max.dist = dist.max.data/2,estimator.type = "classical")
+
+plot(vario.bc.classical, bin.cloud = TRUE, cex.lab = 1, main = "\nBINNED BOXPLOTS",cex.main = 1)
+```
+
+```{r}
+round(vario.bc.classical$bins.lim, 2)
+```
+
+```{r}
+vario.bc.classical$ind.bin
+```
+
+```{r}
+vario.bc.classical$n
+```
+
+Empirical Variogram
+```{r}
+vario.b.classical <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data/2, estimator.type = "classical",uvec = seq(1, dist.max.data/2, l = 13))
+
+plot(vario.b.classical, main = "EMPIRICAL VARIOGRAM (Classical)\nBINNED",cex.main = 1, cex.lab = 1, cex = 1, pch = 16)
+```
+
+```{r}
+vario.b.robust <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data/2, estimator.type = "modulus",uvec = seq(1, dist.max.data/2, l = 13))
+
+plot(vario.b.robust, main = "EMPIRICAL VARIOGRAM (Robust)\nBINNED",cex.main = 1, cex.lab = 1, cex = 1, pch = 16)
+```
+
+In the variogram of the residuals the values increases until certain distance, and then they keep constant.
+
+#### 3) Check the hypothesis of the spatial independence
+
+To check the hypothesis of the spatial independence we use a Monte Carlo approach 
+
+```{r include=FALSE}
+for( i in 1:100){
+  set.seed(i)#fix the seed
+  cat(i)
+  indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 1000)
+  if(prod(vario.b.robust$v[-1]>indep.env$v.lower[-1]) ==1 && prod(vario.b.robust$v<indep.env$v.upper-2) ==1 )
+    break
+}
+```
+
+```{R}
+i
+```
+
+```{r}
+set.seed(i) #fix the seed
+indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 1000)
+plot(vario.b.robust, envelope = indep.env, main = "CONFIDENCE BANDS FOR INDEPENDENT MODEL",lwd = 2, pch = 16)
+```
+
+Not all the values of the variogram are inside the envelope, therefore the process has spatial dependence.
+Nonetheless we only consider the distances larger than 1, we can be conclude that the process does not present spatial correlation
+
+```{r}
+vario.b.classical$u[1]
+```
+#### 4) Check the isotropy property of the process. Comment the results, it’s not necessary to overcome the anisotropy.
+
+To check the anisotropy we need to compute the directional variogram in the 4 main directions: 0º, 45º,90º and 135º. 
+
+```{r}
+variod <- variog4(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data/2, estimator.type = "classical",uvec = seq(1, dist.max.data/2, l = 13))
+
+plot(variod, lyt = 2, legend = FALSE)
+#plot the directional variogram
+legend(x = "bottomright", inset = 0.01, lty = c(1, 2, 3, 4),col = c("black", "red", "green", "blue"), legend = c("0º","45º", "90º", "135º"), cex = 0.5)
+```
+
+All the directional variograms seem to be overlapping, then the assumption of an isotropic process could be plausible.
+# credo?
+
+```{r}
+source("RoseDiagram.R")
+NumCases = length(variod$`0`)
+# crit.val~sill
+# max.dist = massimo valore di dstanza
+rose.diagram(data.var = geodataset.residuals$data, data.cds = geodataset.residuals$coord,
+max.dist = 80, numcases = NumCases, numdirec = 4, poly.tnd = "cte",
+crit.val = 120)
+
+```
+
+
+We can observe that the Rose diagram is more or less a circle. At different directions, the variance is reached
+more or less at the same range. Then, this process is isotropic.
+
+OPPURE
+
+we can observe that the Rose diagram is not circular but it is elliptical, with major range in the 90 direction.
+
+
+MAGARI è IL CASO DI FARE IL CLOUD CON LA ROBUST WAY?
+
+```{r}
+
+par(mfrow = c(1, 3))# cloud variogram
+vario.cloud.robust <- variog(geodata = geodataset.residuals, option = "cloud",estimator.type = "modulus", max.dist = dist.max.data/2)
+
+plot(vario.cloud.robust, main = "CLOUD", cex.main = 1, cex.lab = 1)
+
+vario.bc.robust <- variog(geodata = geodataset.residuals, option = "bin",bin.cloud = TRUE, pairs.min = 30, max.dist = dist.max.data/2,estimator.type = "modulus", uvec = seq(1, dist.max.data/2,l = 13))
+
+plot(vario.bc.robust, bin.cloud = TRUE, cex.lab = 1, main = "\nBINNED BOXPLOTS",cex.main = 1)
+
+vario.b.robust <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data/2, estimator.type = "modulus",uvec = seq(1, dist.max.data/2, l = 13))
+
+plot(vario.b.robust, main = "EMPIRICAL VARIOGRAMS (Robust)\nBINNED",cex.main = 1, cex.lab = 1, cex = 1, pch = 16)
+```
+
+#### 5) Propose four theoretical variogram and estimate the parameters via restricted maximum likelihood or weighed least square. Select the two variograms best fit the data. Explain the parameters of the chosen variogram (sill, nugget, range and kappa).
+
+```{r}
+
+variogramma <- variog(geodata = geodataset.residuals)
+windows(); eyefit(variogramma, silent = FALSE)
+
+
+sill=100
+range=20
+```
+
+ho messo gli stessi dati iniziali per goni fitting, dovrei cercare quelli azzeccati con eyefit per ognuna?
+
+```{R}
+# Theoretical variogram: Estimate the nugget parameter
+wls.exponential <- variofit(variogramma, cov.model = "exponential", ini = c(sill, range), fix.nugget = F, nugget = range, weights = "cressie")
+wls.exponential #To see the results
+
+summary(wls.exponential)$sum.of.squares
+
+```
+
+# Gaussian variogram
+
+```{r}
+wls.gaussian <- variofit(variogramma, cov.model = "gaussian", ini = c(86, 8), fix.nugget = F, nugget = range, weights = "cressie")
+
+wls.gaussian
+
+summary(wls.gaussian)$sum.of.squares
+```
+
+# Spherical
+
+```{r}
+wls.spherical <- variofit(variogramma, cov.model = "spherical",
+ini = c(sill, range), fix.nugget = F, nugget = range, weights = "cressie")
+
+wls.spherical
+
+summary(wls.spherical)$sum.of.squares
+```
+
+# MAtern
+
+```{r}
+wls.matern <- variofit(variogramma, cov.model = "matern", ini = c(86, 11), fix.nugget = F, nugget = range, fix.kappa = FALSE, kappa = 0.5, weights = "cressie")
+
+wls.matern
+
+summary(wls.matern)$sum.of.squares
+```
+
+# All the fitted empirical variograms
+
+```{r}
+plot(variogramma, main = "PARAMETRIC VARIOGRAMS", cex.main = 1,
+pch = 16) #empirical variogram
+lines(wls.exponential, lwd = 2, col = "red", max.dist = dist.max.data) # add exponential
+lines(wls.gaussian, lwd = 2, col = "blue", max.dist = dist.max.data) # add guassian
+lines(wls.spherical, lwd = 2, col = "green3", max.dist = dist.max.data) # add spherical
+lines(wls.matern, lwd = 2, col = "yellow", max.dist = dist.max.data) # add matern
+legend(x = "bottomright", inset = 0.01, lty = c(1, 1), col = c("red",
+"blue", "green3", "yellow"), legend = c("Exponetial", "Gaussian",
+"Spherical", "Matern"), cex = 1)
+
+```
+
+# Computing envelops for empirical variograms.
+
+```{r}
+set.seed(10)
+par(mfrow = c(1, 4))
+# CONFIDENCE BANDS FOR EMPIRICAL VARIOGRAM MODELù
+
+env <- variog.model.env(geodataset.residuals, obj.variog = variogramma,
+model.pars = wls.exponential, nsim = 999)
+plot(variogramma, main = "Exponential", lwd = 2, pch = 16, envelope = env)
+
+env <- variog.model.env(geodataset.residuals, obj.variog = variogramma,
+model.pars = wls.gaussian, nsim = 999)
+plot(variogramma, main = "Gaussian", lwd = 2, pch = 16, envelope = env)
+
+env <- variog.model.env(geodataset.residuals, obj.variog = variogramma,
+model.pars = wls.spherical, nsim = 999)
+plot(variogramma, main = "Spherical", lwd = 2, pch = 16, envelope = env)
+
+env <- variog.model.env(geodataset.residuals, obj.variog = variogramma,
+model.pars = wls.matern, nsim = 999)
+plot(variogramma, main = "Matern", lwd = 2, pch = 16, envelope = env)
+
+```
+
+
+Let's compare the different models
+```{r}
+
+data.frame( model = c("exponential", 
+                      "gaussian", 
+                      "spherical", 
+                      "matern"), 
+            sum.of.squares = c(summary(wls.exponential)$sum.of.squares, 
+                               summary(wls.gaussian)$sum.of.squares, 
+                               summary(wls.spherical)$sum.of.squares, 
+                               summary(wls.matern)$sum.of.squares)
+)
+
+```
+
+
+
+
+
+```{r}
+library(geoR)
+
+# Theoretical variogram: Estimate the nugget parameter
+lk.exponential <- likfit(geodataset.residuals, cov.model = "exponential", ini = c(sill, range), lik.method = "ML")
+lk.exponential
+```
+
+```{r}
+lk.gaussian <- likfit(geodataset.residuals, cov.model = "gaussian", ini = c(86, 8),lik.method = "ML")
+lk.gaussian
+
+```
+
+```{r}
+# lk.spherical <- likfit(geodataset.residuals, cov.model = "spherical", ini = c(sill, range), fix.nugget = F, nugget = range, lik.method = "ML", trend = "1st")
+
+lk.spherical <- likfit(geodataset.residuals, cov.model = "spherical", ini = c(sill, range), lik.method = "ML")
+lk.spherical
+```
+
+
+NON CAPISCO QULE SIA LA DIFFERNZA? KAPPA COS'è?
+```{r}
+lk.matern <- likfit(geodataset.residuals, cov.model = "matern", ini = c(86, 11), fix.nugget = F, nugget = range, fix.kappa = FALSE, kappa = 1, lik.method = "ML")
+lk.matern
+
+lk.matern <- likfit(geodataset.residuals, cov.model = "matern", ini = c(86, 11), lik.method = "ML")
+lk.matern
+```
+
+```{r}
+plot(variogramma, main = "PARAMETRIC VARIOGRAMS", cex.main = 1, pch = 16) #empirical variogram
+lines(lk.exponential, lwd = 2, col = "red", max.dist = dist.max.data) # add exponential
+
+lines(lk.gaussian, lwd = 2, col = "blue", max.dist = dist.max.data) # add guassian
+lines(lk.spherical, lwd = 2, col = "green3", max.dist = dist.max.data) # add spherical
+lines(lk.matern, lwd = 2, col = "yellow", max.dist = dist.max.data) # add matern
+legend(x = "bottomright", inset = 0.01, lty = c(1, 1), col = c("red",
+"blue", "green3", "yellow"), legend = c("Exponetial", "Gaussian",
+"Spherical", "Matern"), cex = 1)
+```
+
+```{R}
+par(mfrow = c(1, 4))
+
+env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.exponential)
+plot(variogramma, main = "Exponential", lwd = 2, pch = 16, envelope = env)
+
+env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.gaussian)
+plot(variogramma, main = "Gaussian", lwd = 2, pch = 16, envelope = env, cex.main = 1)
+
+env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.spherical)
+plot(variogramma, main = "Spherical", lwd = 2, pch = 16, envelope = env, cex.main = 1)
+
+env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.matern)
+plot(variogramma,main = "Matern", lwd = 2, pch = 16, envelope = env, cex.main = 1)
+
+```
+
+Let's compare the different models
+```{r}
+
+data.frame( model = c("exponential", 
+                      "gaussian", 
+                      "spherical", 
+                      "matern"), 
+            loglikelihood = c(lk.exponential$loglik, 
+                               lk.gaussian$loglik, 
+                               lk.spherical$loglik,
+                               lk.matern$loglik
+                               )
+)
+
+```
+
+#### 6) Predict the elevations along all the area of study using the two variogram selected in point 4. Discuss the type of kriging chosen:
+#### a. Compare both kriging predictions using cross-validation, and propose the best model.
+#### b. Show the predictions and their standard errors. 
+
+```{r}
+save.image(".RData")
+```
+
+
+
+
