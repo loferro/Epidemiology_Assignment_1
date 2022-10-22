@@ -27,7 +27,7 @@ head(elevationsIslet)
 
 ### 1) Explore the requirement of stationary mean of the process. In case this requirement is not meet, detrend the data to ensure that the process is stationary in mean. Discuss the results and show the plot of the results
 
-Firstly, we plot the locations.
+Firstly, we plot the locations to see the spatial distribution of the data
 
 ```{r include=FALSE}
 library(geoR)
@@ -44,10 +44,19 @@ bubble(data_for_bubble,'data',do.log=TRUE,key.space='bottom')
 rm(data_for_bubble)
 ```
 
+We also look at the distribution in relation to the x-coordinates (E-w) and y-coordinates(N-S) and  
+and decreases towards the west of the region (based on blue circles). However, in relation to the y-coordinates
+(N-S) is not appreciate a clear trend. These results, it can be also shown in the upper right plot and in the
+lower left plot. Note the plot in the lower left indicates a trend in the longitude
+
+
 ```{r cache=T}
 geodataset <- as.geodata(dataset)
 plot(geodataset)
 ```
+
+The plots show a concentration of high values in the east (data are centered in x=50) and in the north ( data are very dense from y=0 to y=50) 
+
 The process doesn't seem stationary, indeed there is clearly a quadratic trend along the x direction. In addition we try using the y direction as regressor, to find a possible linear or quadratic trend.
 
 ```{r cache=T}
@@ -62,18 +71,19 @@ lm <- lm(data ~ x + I(x^2) + I(y^2), data = dataset)
 summary(lm)
 ```
 
-Now we save the residuals of our linear model and look at the de-trended data.
+Now we have obtained a model in which all regressor seem to be significant => So we save the residuals of our linear model and look at the de-trended data:
+
 ```{r cache=T}
 residuals <- round(residuals(lm), digits = 3)
 dataset.new <- cbind(dataset, residuals)
 head(dataset.new)
-```
 
-```{r cache=T}
+
 geodataset.residuals <- as.geodata(dataset.new, data.col = 4)
 plot(geodataset.residuals)
 ```
-This new dataset seems stationary!
+
+We don't notice any particular trend so this new dataset seems stationary!
 Now the data seems distributed around 0.are str
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
@@ -87,31 +97,34 @@ plot(vario.cloud.classical, main = "CLOUD", cex.main = 1, cex.lab = 1)
 ```
 
 The variability at small distances appears a bit greater than that for larger distances. 
+=> We reduce the density of the plot by reducing the maximum distance over which the variance are calculate. 
 
 ```{r cache=T}
-dist.max.data <- max(dist(cbind(dataset.new$x, dataset.new$y)))
-#maximum distances between points
+dist.max.data  <- 120
+#i chose 120 since it's when the variance becomes much smaller
 
-vario.cloud.classical <- variog(geodata = geodataset.residuals,option = "cloud", estimator.type = "classical", max.dist = dist.max.data/2)
+
+vario.cloud.classical <- variog(geodata = geodataset.residuals,option = "cloud", estimator.type = "classical", max.dist = dist.max.data)
 
 plot(vario.cloud.classical, main = "CLOUD", cex.main = 1, cex.lab = 1)
 ```
 
 ```{r cache=T}
-dist.max.data <- max(dist(cbind(dataset.new$x, dataset.new$y)))
 
-vario.bc.classical <- variog(geodata = geodataset.residuals, option = "bin",bin.cloud = TRUE, pairs.min = 30, max.dist = dist.max.data/2,estimator.type = "classical")
+vario.bc.classical <- variog(geodata = geodataset.residuals, option = "bin",bin.cloud = TRUE, pairs.min = 30, max.dist = dist.max.data,estimator.type = "classical")
 
 plot(vario.bc.classical, bin.cloud = TRUE, cex.lab = 1, main = "\nBINNED BOXPLOTS",cex.main = 1)
 ```
 
 ```{r cache=T}
-round(vario.bc.classical$bins.lim, 2)
+# round(vario.bc.classical$bins.lim, 2)
 ```
 
 ```{r cache=T}
 vario.bc.classical$ind.bin
 ```
+
+=> All the bins have at least pairs.min=30 observations each, indeed they have:
 
 ```{r cache=T}
 vario.bc.classical$n
@@ -119,13 +132,13 @@ vario.bc.classical$n
 
 Empirical Variogram
 ```{r cache=T}
-vario.b.classical <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data/2, estimator.type = "classical",uvec = seq(1, dist.max.data/2, l = 13))
+vario.b.classical <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "classical",uvec = seq(1, dist.max.data, l = 13))
 
 plot(vario.b.classical, main = "EMPIRICAL VARIOGRAM (Classical)\nBINNED",cex.main = 1, cex.lab = 1, cex = 1, pch = 16)
 ```
 
 ```{r cache=T}
-vario.b.robust <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data/2, estimator.type = "modulus",uvec = seq(1, dist.max.data/2, l = 13))
+vario.b.robust <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "modulus",uvec = seq(1, dist.max.data, l = 13))
 
 plot(vario.b.robust, main = "EMPIRICAL VARIOGRAM (Robust)\nBINNED",cex.main = 1, cex.lab = 1, cex = 1, pch = 16)
 ```
@@ -136,54 +149,53 @@ In the variogram of the residuals the values increases until certain distance, a
 
 To check the hypothesis of the spatial independence we use a Monte Carlo approach 
 
-```{r include=FALSE}
-for( i in 1:100){
-  set.seed(i)#fix the seed
-  cat(i)
-  indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 1000)
-  if(prod(vario.b.robust$v[-1]>indep.env$v.lower[-1]) ==1 && prod(vario.b.robust$v<indep.env$v.upper-2) ==1 )
-    break
-}
-```
-
 ```{r cache=T}
-i
-```
-
-```{r cache=T}
-set.seed(i) #fix the seed
+set.seed(1) #fix the seed
 indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 1000)
 plot(vario.b.robust, envelope = indep.env, main = "CONFIDENCE BANDS FOR INDEPENDENT MODEL",lwd = 2, pch = 16)
 ```
 
-Not all the values of the variogram are inside the envelope, therefore the process has spatial dependence.
-Nonetheless we only consider the distances larger than 1, we can be conclude that the process does not present spatial correlation
+All the values of the empirical variogram are inside the envelope, therefore the process has no spatial dependence.
 
-```{r cache=T}
-vario.b.classical$u[1]
-```
 ### 4) Check the isotropy property of the process. Comment the results, it’s not necessary to overcome the anisotropy.
 
 To check the anisotropy we need to compute the directional variogram in the 4 main directions: 0º, 45º,90º and 135º. 
 
+<!-- classical -->
+
 ```{r cache=T}
-variod <- variog4(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data/2, estimator.type = "classical",uvec = seq(1, dist.max.data/2, l = 13))
+variod <- variog4(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "classical",uvec = seq(1, dist.max.data, l = 13))
 
 plot(variod, lyt = 2, legend = FALSE)
 #plot the directional variogram
 legend(x = "bottomright", inset = 0.01, lty = c(1, 2, 3, 4),col = c("black", "red", "green", "blue"), legend = c("0º","45º", "90º", "135º"), cex = 0.5)
 ```
 
-All the directional variograms seem to be overlapping, then the assumption of an isotropic process could be plausible.
+<!-- oppure modulus? -->
+
+```{r cache=T}
+variod <- variog4(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "modulus",uvec = seq(1, dist.max.data, l = 13))
+
+plot(variod, lyt = 2, legend = FALSE)
+#plot the directional variogram
+legend(x = "bottomright", inset = 0.01, lty = c(1, 2, 3, 4),col = c("black", "red", "green", "blue"), legend = c("0º","45º", "90º", "135º"), cex = 0.5)
+```
+
+The directional variograms don't seem to be perfectly overlapping: they might have the same range, but not the same sill.
+
+Let's also observe the Rose Diagram:
+
 # credo?
 
 ```{r cache=T}
 source("RoseDiagram.R")
+
 NumCases = length(variod$`0`)
+
 # crit.val~sill
 # max.dist = massimo valore di dstanza
 rose.diagram(data.var = geodataset.residuals$data, data.cds = geodataset.residuals$coord,
-max.dist = 80, numcases = NumCases, numdirec = 4, poly.tnd = "cte",
+max.dist = dist.max.data, numcases = NumCases, numdirec = 4, poly.tnd = "cte",
 crit.val = 120)
 
 ```
@@ -194,7 +206,8 @@ more or less at the same range. Then, this process is isotropic.
 
 OPPURE
 
-we can observe that the Rose diagram is not circular but it is elliptical, with major range in the 90 direction.
+We notice that the Rose diagram is not circular, but it is rather elliptical, with major range in the 90 direction => Then we can't make the assumption of isotropic process.
+<!-- da aggiungere "which should be necessary for the correct use of the kriging techniques  -->
 
 
 MAGARI è IL CASO DI FARE IL CLOUD CON LA ROBUST WAY?
@@ -202,29 +215,33 @@ MAGARI è IL CASO DI FARE IL CLOUD CON LA ROBUST WAY?
 ```{r cache=T}
 
 par(mfrow = c(1, 3))# cloud variogram
-vario.cloud.robust <- variog(geodata = geodataset.residuals, option = "cloud",estimator.type = "modulus", max.dist = dist.max.data/2)
+vario.cloud.robust <- variog(geodata = geodataset.residuals, option = "cloud",estimator.type = "modulus", max.dist = dist.max.data)
 
 plot(vario.cloud.robust, main = "CLOUD", cex.main = 1, cex.lab = 1)
 
-vario.bc.robust <- variog(geodata = geodataset.residuals, option = "bin",bin.cloud = TRUE, pairs.min = 30, max.dist = dist.max.data/2,estimator.type = "modulus", uvec = seq(1, dist.max.data/2,l = 13))
+vario.bc.robust <- variog(geodata = geodataset.residuals, option = "bin",bin.cloud = TRUE, pairs.min = 30, max.dist = dist.max.data,estimator.type = "modulus", uvec = seq(1, dist.max.data,l = 13))
 
 plot(vario.bc.robust, bin.cloud = TRUE, cex.lab = 1, main = "\nBINNED BOXPLOTS",cex.main = 1)
 
-vario.b.robust <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data/2, estimator.type = "modulus",uvec = seq(1, dist.max.data/2, l = 13))
+vario.b.robust <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "modulus",uvec = seq(1, dist.max.data, l = 13))
 
 plot(vario.b.robust, main = "EMPIRICAL VARIOGRAMS (Robust)\nBINNED",cex.main = 1, cex.lab = 1, cex = 1, pch = 16)
 ```
 
-### 5) Propose four theoretical variogram and estimate the parameters via restricted maximum likelihood or weighed least square. Select the two variograms best fit the data. Explain the parameters of the chosen variogram (sill, nugget, range and kappa).
+### 5) Propose four theoretical variogram and estimate the parameters via restricted maximum likelihood or weighed least square. Select the two variograms which best fit the data. Explain the parameters of the chosen variogram (sill, nugget, range and kappa).
 
 ```{r cache=T}
 
-variogramma <- variog(geodata = geodataset.residuals)
+variogramma <- variog(geodata = geodataset.residuals, max.dist = 120)
+par(mfrow=c(1,2))
+plot(variogramma)
+plot(vario.b.robust)
+
+# BHO USERò IL VARIO.B.ROBUST
+variogramma = vario.b.robust
+
 # windows(); eyefit(variogramma, silent = FALSE)
 
-
-sill=100
-range=20
 ```
 
 ho messo gli stessi dati iniziali per goni fitting, dovrei cercare quelli azzeccati con eyefit per ognuna?
@@ -232,19 +249,19 @@ ho messo gli stessi dati iniziali per goni fitting, dovrei cercare quelli azzecc
 
 ```{r cache=TRUE, include=FALSE}
 
-wls.exponential <- variofit(variogramma, cov.model = "exponential", ini = c(sill, range), fix.nugget = F, nugget = range, weights = "cressie")
+wls.exponential <- variofit(variogramma, cov.model = "exponential", ini = c(91, 25), fix.nugget = F, nugget = range, weights = "cressie")
 
 wls.gaussian <- variofit(variogramma, cov.model = "gaussian", ini = c(86, 8), fix.nugget = F, nugget = range, weights = "cressie")
 
-wls.spherical <- variofit(variogramma, cov.model = "spherical", ini = c(sill, range), fix.nugget = F, nugget = range, weights = "cressie")
+wls.spherical <- variofit(variogramma, cov.model = "spherical", ini = c(84, 32), fix.nugget = F, nugget = range, weights = "cressie")
 
 wls.matern <- variofit(variogramma, cov.model = "matern", ini = c(86, 11), fix.nugget = F, nugget = range, fix.kappa = FALSE, kappa = 0.5, weights = "cressie")
 ```
 
-#### Exponential Variogram
+#### Exponential
 
 ```{r cache=T}
-wls.exponential #To see the results
+wls.exponential
 ```
 
 #### Gaussian
@@ -262,16 +279,14 @@ wls.spherical
 wls.matern
 ```
 
-```{r cache=T}
-plot(variogramma, main = "PARAMETRIC VARIOGRAMS", cex.main = 1,
-pch = 16) #empirical variogram
+```{r cache=T, include=F}
+plot(variogramma, main = "PARAMETRIC VARIOGRAMS", cex.main = 1, pch = 16) #empirical variogram
 lines(wls.exponential, lwd = 2, col = "red", max.dist = dist.max.data) # add exponential
 lines(wls.gaussian, lwd = 2, col = "blue", max.dist = dist.max.data) # add guassian
 lines(wls.spherical, lwd = 2, col = "green3", max.dist = dist.max.data) # add spherical
 lines(wls.matern, lwd = 2, col = "yellow", max.dist = dist.max.data) # add matern
-legend(x = "bottomright", inset = 0.01, lty = c(1, 1), col = c("red",
-"blue", "green3", "yellow"), legend = c("Exponetial", "Gaussian",
-"Spherical", "Matern"), cex = 1)
+legend(x = "bottomright", inset = 0.01, lty = c(1, 1), col = c("red", "blue", "green3", "yellow"), 
+       legend = c("Exponetial", "Gaussian", "Spherical", "Matern"), cex = 1)
 
 ```
 
