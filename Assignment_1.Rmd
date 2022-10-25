@@ -25,7 +25,7 @@ elevationsIslet <- read.delim("elevationsIslet.txt")
 head(elevationsIslet)
 ```
 
-### 1) Explore the requirement of stationary mean of the process. In case this requirement is not meet, detrend the data to ensure that the process is stationary in mean. Discuss the results and show the plot of the results
+### 1) Explore the requirement of stationary mean of the process. In case this requirement is not met, detrend the data to ensure that the process is stationary in mean. Discuss the results and show the plot of the results
 
 Firstly, we plot the locations to see the spatial distribution of the data
 
@@ -248,7 +248,7 @@ ho messo gli stessi dati iniziali per goni fitting, dovrei cercare quelli azzecc
 
 
 ```{r cache=TRUE, include=FALSE}
-
+ 
 wls.exponential <- variofit(variogramma, cov.model = "exponential", ini = c(91, 25), fix.nugget = F, nugget = range, weights = "cressie")
 
 wls.gaussian <- variofit(variogramma, cov.model = "gaussian", ini = c(86, 8), fix.nugget = F, nugget = range, weights = "cressie")
