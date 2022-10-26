@@ -18,7 +18,7 @@ knitr::opts_chunk$set( echo=F )
 # load("Data.RData")
 ```
 
-```{r cache=T}
+```{r cache=F}
 poly84 <- read.delim("poly84.txt")
 names(poly84)= c("x", "y", "data")
 head(poly84)
@@ -37,7 +37,7 @@ library(gstat)
 library(sp)
 ```
 
-```{r cache=T}
+```{r cache=F}
 dataset = elevationsIslet
 data_for_bubble = dataset
 coordinates(data_for_bubble) <- c('x','y')
@@ -50,9 +50,9 @@ METTERLO IN SCALA D COLORI
 
 We also look at the distribution in relation to the x-coordinates (E-W) and y-coordinates(N-S).
 
-```{r cache=T}
+```{r cache=F}
 geodataset <- as.geodata(dataset)
-plot(geodataset)
+plot(geodataset, borders = poly84[,1:2])[1]
 ```
 
 
@@ -71,21 +71,21 @@ The plots show a concentration of high values in the east (data are centered in 
 
 The process doesn't seem stationary, indeed there is a clear quadratic trend along the x direction. In addition we try using the y direction as regressor, to find a possible linear or quadratic trend.
 
-```{r cache=T}
+```{r cache=F}
 lm <- lm(data ~ x + y + I(x^2) + I(y^2), data = dataset)
 summary(lm)
 ```
 
 The linear term in y doesn't seem significant, so we remove it.
 
-```{r cache=T}
+```{r cache=F}
 lm <- lm(data ~ x + I(x^2) + I(y^2), data = dataset)
 summary(lm)
 ```
 
 Now we have obtained a model in which all regressor seem to be significant => So we save the residuals of our linear model and look at the de-trended data:
 
-```{r cache=T}
+```{r cache=F}
 residuals <- round(residuals(lm), digits = 3)
 dataset.new <- cbind(dataset, residuals)
 head(dataset.new)
@@ -113,7 +113,7 @@ We don't notice any particular trend so this new dataset seems stationary! And n
 ### 2) Explore the spatial dependence of the elevation variable using the variogram cloud and bins and the empirical variogram. Discuss the results and plot them
 
 ### Variogram Could
-```{r cache=T}
+```{r cache=F}
 vario.cloud.classical <- variog(geodata = geodataset.residuals, option = "cloud", estimator.type = "classical")
 plot(vario.cloud.classical, main = "CLOUD", cex.main = 1, cex.lab = 1)
 ```
@@ -121,7 +121,7 @@ plot(vario.cloud.classical, main = "CLOUD", cex.main = 1, cex.lab = 1)
 The variability at small distances appears a bit greater than that for larger distances. 
 => We reduce the density of the plot by reducing the maximum distance over which the variance are calculate. 
 
-```{r cache=T}
+```{r cache=F}
 dist.max.data  <- 120
 #i chose 120 since it's when the variance becomes much smaller
 
@@ -131,35 +131,35 @@ vario.cloud.classical <- variog(geodata = geodataset.residuals,option = "cloud",
 plot(vario.cloud.classical, main = "CLOUD", cex.main = 1, cex.lab = 1)
 ```
 
-```{r cache=T}
+```{r cache=F}
 
 vario.bc.classical <- variog(geodata = geodataset.residuals, option = "bin",bin.cloud = TRUE, pairs.min = 30, max.dist = dist.max.data,estimator.type = "classical")
 
 plot(vario.bc.classical, bin.cloud = TRUE, cex.lab = 1, main = "\nBINNED BOXPLOTS",cex.main = 1)
 ```
 
-```{r cache=T}
+```{r cache=F}
 # round(vario.bc.classical$bins.lim, 2)
 ```
 
-```{r cache=T}
+```{r cache=F}
 vario.bc.classical$ind.bin
 ```
 
 => All the bins have at least pairs.min=30 observations each, indeed they have:
 
-```{r cache=T}
+```{r cache=F}
 vario.bc.classical$n
 ```
 
 Empirical Variogram
-```{r cache=T}
+```{r cache=F}
 vario.b.classical <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "classical",uvec = seq(1, dist.max.data, l = 13))
 
 plot(vario.b.classical, main = "EMPIRICAL VARIOGRAM (Classical)\nBINNED",cex.main = 1, cex.lab = 1, cex = 1, pch = 16)
 ```
 
-```{r cache=T}
+```{r cache=F}
 vario.b.robust <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "modulus",uvec = seq(1, dist.max.data, l = 13))
 
 plot(vario.b.robust, main = "EMPIRICAL VARIOGRAM (Robust)\nBINNED",cex.main = 1, cex.lab = 1, cex = 1, pch = 16)
@@ -171,7 +171,7 @@ In the variogram of the residuals the values increases until certain distance, a
 
 To check the hypothesis of the spatial independence we use a Monte Carlo approach 
 
-```{r cache=T}
+```{r cache=F}
 set.seed(1) #fix the seed
 indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 1000)
 plot(vario.b.robust, envelope = indep.env, main = "CONFIDENCE BANDS FOR INDEPENDENT MODEL",lwd = 2, pch = 16)
@@ -185,7 +185,7 @@ To check the anisotropy we need to compute the directional variogram in the 4 ma
 
 <!-- classical -->
 
-```{r cache=T}
+```{r cache=F}
 variod <- variog4(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "classical",uvec = seq(1, dist.max.data, l = 13))
 
 plot(variod, lyt = 2, legend = FALSE)
@@ -195,7 +195,7 @@ legend(x = "bottomright", inset = 0.01, lty = c(1, 2, 3, 4),col = c("black", "re
 
 <!-- oppure modulus? -->
 
-```{r cache=T}
+```{r cache=F}
 variod <- variog4(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "modulus",uvec = seq(1, dist.max.data, l = 13))
 
 plot(variod, lyt = 2, legend = FALSE)
@@ -203,13 +203,11 @@ plot(variod, lyt = 2, legend = FALSE)
 legend(x = "bottomright", inset = 0.01, lty = c(1, 2, 3, 4),col = c("black", "red", "green", "blue"), legend = c("0º","45º", "90º", "135º"), cex = 0.5)
 ```
 
-The directional variograms don't seem to be perfectly overlapping: they might have the same range, but not the same sill.
+The directional variograms don't seem to be perfectly overlapping: they might have the a different sill, in particular the variogram seems to have a higher value along the 90° direction => Geometrical anistropy
 
-Let's also observe the Rose Diagram:
+Let's also analyse the range observing the Rose Diagram:
 
-# credo?
-
-```{r cache=T}
+```{r cache=F}
 source("RoseDiagram.R")
 
 NumCases = length(variod$`0`)
@@ -228,31 +226,21 @@ more or less at the same range. Then, this process is isotropic.
 
 OPPURE
 
-We notice that the Rose diagram is not circular, but it is rather elliptical, with major range in the 90 direction => Then we can't make the assumption of isotropic process.
-<!-- da aggiungere "which should be necessary for the correct use of the kriging techniques  -->
+We notice that the Rose diagram is not perfectly circular: it is slightly elliptical, with major range in the 90 direction => Zonal anistropy.
+
+=> In conclusion we have a combined anisotropy, so we can't make the assumption of isotropic process, which are necessary for the correct use of the kriging techniques, since the theoretical variograms used for krigring are based on isotropic models.
 
 
 MAGARI è IL CASO DI FARE IL CLOUD CON LA ROBUST WAY?
 
-```{r cache=T}
+### 5) Propose four theoretical variograms and estimate the parameters via restricted maximum likelihood or weighed least square. Select the two variograms which best fit the data. Explain the parameters of the chosen variogram (sill, nugget, range and kappa).
 
-par(mfrow = c(1, 3))# cloud variogram
-vario.cloud.robust <- variog(geodata = geodataset.residuals, option = "cloud",estimator.type = "modulus", max.dist = dist.max.data)
+<!-- The κ parameter controls the smoothness of the process. -->
+<!-- The higher is κ, the smoother the spatial process. -->
+<!-- Special cases κ = 1/2 exponential model and κ → ∞ Gaussian mode -->
 
-plot(vario.cloud.robust, main = "CLOUD", cex.main = 1, cex.lab = 1)
 
-vario.bc.robust <- variog(geodata = geodataset.residuals, option = "bin",bin.cloud = TRUE, pairs.min = 30, max.dist = dist.max.data,estimator.type = "modulus", uvec = seq(1, dist.max.data,l = 13))
-
-plot(vario.bc.robust, bin.cloud = TRUE, cex.lab = 1, main = "\nBINNED BOXPLOTS",cex.main = 1)
-
-vario.b.robust <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "modulus",uvec = seq(1, dist.max.data, l = 13))
-
-plot(vario.b.robust, main = "EMPIRICAL VARIOGRAMS (Robust)\nBINNED",cex.main = 1, cex.lab = 1, cex = 1, pch = 16)
-```
-
-### 5) Propose four theoretical variogram and estimate the parameters via restricted maximum likelihood or weighed least square. Select the two variograms which best fit the data. Explain the parameters of the chosen variogram (sill, nugget, range and kappa).
-
-```{r cache=T}
+```{r cache=F}
 
 variogramma <- variog(geodata = geodataset.residuals, max.dist = 120)
 par(mfrow=c(1,2))
@@ -266,10 +254,10 @@ variogramma = vario.b.robust
 
 ```
 
-ho messo gli stessi dati iniziali per goni fitting, dovrei cercare quelli azzeccati con eyefit per ognuna?
+<!-- tau_sq = nugget -->
+<!-- sigma_sq = sill -->
 
-
-```{r cache=TRUE, include=FALSE}
+```{r cache=F, include=FALSE}
  
 wls.exponential <- variofit(variogramma, cov.model = "exponential", ini = c(91, 25), fix.nugget = F, weights = "cressie")
 
@@ -277,31 +265,58 @@ wls.gaussian <- variofit(variogramma, cov.model = "gaussian", ini = c(86, 8), fi
 
 wls.spherical <- variofit(variogramma, cov.model = "spherical", ini = c(84, 32), fix.nugget = F, weights = "cressie")
 
-wls.matern <- variofit(variogramma, cov.model = "matern", ini = c(86, 11), fix.nugget = F, fix.kappa = FALSE, kappa = 0.5, weights = "cressie")
+wls.matern <- variofit(variogramma, cov.model = "matern", ini = c(88, 19), fix.nugget = F, fix.kappa = T, kappa = 10.27, weights = "cressie")
+wls.matern
+
+
+wls.matern <- variofit(variogramma, cov.model = "matern", ini = c(88, 19), fix.nugget = F, fix.kappa = T, kappa = 0.27, weights = "cressie")
+wls.matern
+
+
+wls.matern <- variofit(variogramma, cov.model = "matern", ini = c(88, 19), fix.nugget = F, fix.kappa = F, kappa = 0.27, weights = "cressie")
+wls.matern
+
+
+wls.matern <- variofit(variogramma, cov.model = "matern", ini = c(88, 19), fix.nugget = F, weights = "cressie")
+wls.matern
 ```
+
+```{r}
+temp=c()
+for(i in seq(1e-5,10,10/100)){
+  wls.matern <- variofit(variogramma, cov.model = "matern", ini = c(88, 19), fix.nugget = F, fix.kappa = T, kappa = i, weights = "cressie")
+  temp = c(temp, wls.matern$value)
+}
+plot(seq(1e-5,10,10/100), temp, type="l")
+```
+
+perchè se gli impongo un valore viene un weighted sum minore che nel normale fitting?
 
 #### Exponential
 
-```{r cache=T}
+```{r cache=F}
 wls.exponential
 ```
 
 #### Gaussian
-```{r cache=T}
+```{r cache=F}
 wls.gaussian
 ```
 
 #### Spherical
-```{r cache=T}
+```{r cache=F}
 wls.spherical
 ```
 
 #### Matern
-```{r cache=T}
+```{r cache=F}
 wls.matern
 ```
 
-```{r cache=TRUE, include=F}
+$k=1$ so the Matern model redces to a 
+
+
+```{r cache=F, include=F}
 plot(variogramma, main = "PARAMETRIC VARIOGRAMS", cex.main = 1, pch = 16) #empirical variogram
 lines(wls.exponential, lwd = 2, col = "red", max.dist = dist.max.data) # add exponential
 lines(wls.gaussian, lwd = 2, col = "blue", max.dist = dist.max.data) # add guassian
@@ -313,7 +328,7 @@ legend(x = "bottomright", inset = 0.01, lty = c(1, 1), col = c("red", "blue", "g
 ```
 
 #### Computing envelops for empirical variograms.
-```{r cache=TRUE, include=FALSE}
+```{r cache=F, include=FALSE}
 set.seed(10)
 env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = wls.exponential, nsim = 999)
 env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = wls.gaussian, nsim = 999)
@@ -321,7 +336,7 @@ env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pa
 env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = wls.matern, nsim = 999)
 ```
 
-```{R cache=T}
+```{R cache=F}
 par(mfrow = c(1, 4))
 plot(variogramma, main = "Exponential", lwd = 2, pch = 16, envelope = env)
 plot(variogramma, main = "Gaussian", lwd = 2, pch = 16, envelope = env)
@@ -331,9 +346,9 @@ plot(variogramma, main = "Matern", lwd = 2, pch = 16, envelope = env)
 
 
 #### Let's compare the different models
-```{r cache=T}
+```{r cache=F}
 
-data.frame( model = c("exponential", 
+temp = data.frame( model = c("exponential", 
                       "gaussian", 
                       "spherical", 
                       "matern"), 
@@ -343,45 +358,46 @@ data.frame( model = c("exponential",
                                summary(wls.matern)$sum.of.squares)
 )
 
+temp[ order(temp$sum.of.squares),]
+
 ```
 
 
 
-```{r cache=TRUE, include=FALSE}
-lk.exponential <- likfit(geodataset.residuals, cov.model = "exponential", ini = c(91, 25), lik.method = "ML")
+```{r cache=F, include=FALSE}
+lk.exponential <- likfit(geodataset.residuals, cov.model = "exponential", ini = c(91, 25), lik.method = "REML")
 
-lk.gaussian <- likfit(geodataset.residuals, cov.model = "gaussian", ini = c(86, 8), lik.method = "ML")
+lk.gaussian <- likfit(geodataset.residuals, cov.model = "gaussian", ini = c(86, 8), lik.method = "REML")
 
-lk.spherical <- likfit(geodataset.residuals, cov.model = "spherical", ini = c(91, 22), lik.method = "ML")
+lk.spherical <- likfit(geodataset.residuals, cov.model = "spherical", ini = c(91, 22), lik.method = "REML")
+
+lk.matern <- likfit(geodataset.residuals, cov.model = "matern", ini = c(88, 19), fix.nugget = F, fix.kappa = F, kappa = 0.27, lik.method = "REML")
+lk.matern <- likfit(geodataset.residuals, cov.model = "matern", ini = c(91,22), fix.nugget = F, fix.kappa = F, kappa = 0.27, lik.method = "REML")
 
 ```
 
 #### Exponential
-```{r cache=T}
+```{r cache=F}
 lk.exponential
 ```
 
 #### Gaussian
-```{r cache=T}
+```{r cache=F}
 lk.gaussian
 ```
 
 #### Spherical
-```{r cache=T}
+```{r cache=F}
 lk.spherical
 ```
 
 
-NON CAPISCO QUALE SIA LA DIFFERENZA? KAPPA COS'è?
-```{r cache=T}
-lk.matern <- likfit(geodataset.residuals, cov.model = "matern", ini = c(86, 11), fix.nugget = F, fix.kappa = FALSE, kappa = 1, lik.method = "ML")
-lk.matern
-
-lk.matern <- likfit(geodataset.residuals, cov.model = "matern", ini = c(86, 11), lik.method = "ML")
+#### Matern
+```{r cache=F}
 lk.matern
 ```
 
-```{r cache=T}
+```{r cache=F}
 plot(variogramma, main = "PARAMETRIC VARIOGRAMS", cex.main = 1, pch = 16) #empirical variogram
 lines(lk.exponential, lwd = 2, col = "red", max.dist = dist.max.data) # add exponential
 lines(lk.gaussian, lwd = 2, col = "blue", max.dist = dist.max.data) # add guassian
@@ -392,14 +408,14 @@ legend(x = "bottomright", inset = 0.01, lty = c(1, 1), col = c("red",
 "Spherical", "Matern"), cex = 1)
 ```
 
-```{r cache=TRUE, include=FALSE}
+```{r cache=F, include=FALSE}
 env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.exponential)
 env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.gaussian)
 env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.spherical)
 env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.matern)
 ```
 
-```{R cache=T}
+```{R cache=F}
 par(mfrow = c(1, 4))
 plot(variogramma, main = "Exponential", lwd = 2, pch = 16, envelope = env)
 plot(variogramma, main = "Gaussian", lwd = 2, pch = 16, envelope = env, cex.main = 1)
@@ -407,10 +423,13 @@ plot(variogramma, main = "Spherical", lwd = 2, pch = 16, envelope = env, cex.mai
 plot(variogramma,main = "Matern", lwd = 2, pch = 16, envelope = env, cex.main = 1)
 ```
 
-Let's compare the different models
-```{r cache=T}
+All the simulated variograms contain the empirical variogram so we don't have evidence to exclude any model.
+<!-- ???? -->
 
-data.frame( model = c("exponential", 
+Let's compare the different models
+```{r cache=F}
+
+temp.lk = data.frame( model = c("exponential", 
                       "gaussian", 
                       "spherical", 
                       "matern"), 
@@ -421,15 +440,18 @@ data.frame( model = c("exponential",
                                )
 )
 
+temp.lk[ order(temp$loglikelihood, decreasing = T),]
 ```
+
+The two fitted models with the highest loglikelihood are the Matern model and the Gaussian model. So we'll use these two to perform the kriging prediction step.
 
 ### 6) Predict the elevations along all the area of study using the two variogram selected in point 4. Discuss the type of kriging chosen:
 ### a. Compare both kriging predictions using cross-validation, and propose the best model.
 ### b. Show the predictions and their standard errors. 
 
-```{r cache=T}
-rnx <- range(geodataset$coords[,1]) #Minimum and aximum of the latitude
-rny <- range(geodataset$coords[,2]) #Minimum and Maximum of the longitude
+```{r cache=F}
+rnx <- range(geodataset$coords[,1]) #Minimum and maximum of the latitude
+rny <- range(geodataset$coords[,2]) #Minimum and maximum of the longitude
 newx.grid <- seq(rnx[1],rnx[2],l=51) #Create a sequence from minimum to
 #maximum of the latitude of 51 points
 newy.grid <- seq(rny[1],rny[2],l=51) #Create a sequence from minimum to
@@ -443,31 +465,31 @@ points(dsgr.grid, pch = 19, col = 4, cex = 0.25)
 
 #### Gaussian
 
-```{r cache=T}
+```{r cache=F}
 kc.gaussian<-krige.conv(geodataset,locations= dsgr.grid,
 krige =krige.control(type.krige="OK",obj.m = lk.gaussian,
 trend.l="1st" ,trend.d= "1st"))
-image(kc.gaussian,xlim=range(dataset$x),ylim=range(dataset$y))
+image(kc.gaussian,xlim=range(dataset$x),ylim=range(dataset$y), borders = poly84)
 ```
 
-```{r cache=T}
+```{r cache=F}
 contour(kc.gaussian,filled= TRUE,
-coords.data=geodataset$coords,col=terrain.colors(31),xlim=range(dataset$x),ylim=range(dataset$y))
+coords.data=geodataset$coords,col=terrain.colors(31),xlim=range(dataset$x),ylim=range(dataset$y),borders = poly84)
 ```
 
-```{r cache=T}
+```{r cache=F}
 contour(kc.gaussian,filled= TRUE,val=sqrt(kc.gaussian$krige.var),
 coords.data=geodataset$coords,xlim=range(dataset$x),ylim=range(dataset$y),
-col = gray(seq(1, 0.1, l = 30)), main="Plot of Standard Deviation")
+col = gray(seq(1, 0.1, l = 30)), main="Plot of Standard Deviation",borders = poly84)
 ```
  
-```{r cache=T}
+```{r cache=F}
 xv.gaussian <- xvalid(geodataset, model =lk.gaussian, reestimate = F)
 
 names(xv.gaussian)
 ```
 
-```{r cache=T}
+```{r cache=F}
 VC1.gaussian <- abs(mean(xv.gaussian$error/sqrt(xv.gaussian$krige.var)))
 VC2.gaussian <- sqrt(mean((xv.gaussian$error/sqrt(xv.gaussian$krige.var))^2))
 VC3.gaussian <- sqrt(mean(xv.gaussian$error^2))
@@ -477,103 +499,30 @@ data.frame( index = c("VC1", "VC2", "VC3"), value = c(VC1.gaussian, VC2.gaussian
 ```
 
 
-<!-- ####################################### -->
-
-#### Spherical
-
-```{r cache=T}
-kc.spherical<-krige.conv(geodataset,locations= dsgr.grid,
-krige =krige.control(type.krige="OK",obj.m = lk.spherical,
-trend.l="1st" ,trend.d= "1st"))
-image(kc.spherical, xlim=range(dataset$x),ylim=range(dataset$y))
-```
-
-```{r cache=T}
-contour(kc.spherical,filled= TRUE,
-coords.data=geodataset$coords,xlim=range(dataset$x),ylim=range(dataset$y),
-col=terrain.colors(30))
-```
-
-```{r cache=T}
-contour(kc.spherical,filled= TRUE,val=sqrt(kc.spherical$krige.var),
-coords.data=geodataset$coords,xlim=range(dataset$x),ylim=range(dataset$y),
-col = gray(seq(1, 0.1, l = 30)))
-```
-
-```{r cache=T}
-xv.spherical <- xvalid(geodataset, model =lk.spherical, reestimate = F)
-```
-
-```{r cache=T}
-VC1.spherical <- abs(mean(xv.spherical$error/sqrt(xv.spherical$krige.var)))
-VC2.spherical <- sqrt(mean((xv.spherical$error/sqrt(xv.spherical$krige.var))^2))
-VC3.spherical <- sqrt(mean(xv.spherical$error^2))
-
-data.frame( index = c("VC1", "VC2", "VC3"), value = c(VC1.spherical, VC2.spherical, VC3.spherical) )
-```
-
-<!-- ################################ -->
-
-#### Exponential
-
-```{r cache=T}
-kc.exponential<-krige.conv(geodataset,locations= dsgr.grid,
-krige =krige.control(type.krige="OK",obj.m = lk.exponential,
-trend.l="1st" ,trend.d= "1st"))
-image(kc.exponential, xlim=range(dataset$x),ylim=range(dataset$y))
-```
-
-```{r cache=T}
-contour(kc.exponential,filled= TRUE,
-coords.data=geodataset$coords,xlim=range(dataset$x),ylim=range(dataset$y),
-col=terrain.colors(30))
-```
-
-```{r cache=T}
-contour(kc.exponential,filled= TRUE,val=sqrt(kc.exponential$krige.var),
-coords.data=geodataset$coords,xlim=range(dataset$x),ylim=range(dataset$y),
-col = gray(seq(1, 0.1, l = 30)))
-```
-
-```{r cache=T}
-xv.exponential <- xvalid(geodataset, model =lk.exponential, reestimate = F)
-```
-
-```{r cache=T}
-VC1.exponential <- abs(mean(xv.exponential$error/sqrt(xv.exponential$krige.var)))
-VC2.exponential <- sqrt(mean((xv.exponential$error/sqrt(xv.exponential$krige.var))^2))
-VC3.exponential <- sqrt(mean(xv.exponential$error^2))
-
-data.frame( index = c("VC1", "VC2", "VC3"), value = c(VC1.exponential, VC2.exponential, VC3.exponential) )
-```
-
 <!-- ############################ -->
 
 #### Matern 
-```{r cache=T}
+```{r cache=F}
 kc.matern<-krige.conv(geodataset,locations= dsgr.grid,
-krige =krige.control(type.krige="OK",obj.m = lk.matern,
-trend.l="1st" ,trend.d= "1st"))
-image(kc.matern, xlim=range(dataset$x),ylim=range(dataset$y))
+krige = krige.control(type.krige="OK",obj.m = lk.matern, trend.l="1st" ,trend.d= "1st"))
+image(kc.matern, xlim=range(dataset$x),ylim=range(dataset$y), borders = poly84)
 ```
 
-```{r cache=T}
+```{r cache=F}
 contour(kc.matern,filled= TRUE,
-coords.data=geodataset$coords,xlim=range(dataset$x),ylim=range(dataset$y),
-col=terrain.colors(30))
+coords.data=geodataset$coords,xlim=range(dataset$x),ylim=range(dataset$y), col=terrain.colors(30), borders = poly84)
 ```
 
-```{r cache=T}
+```{r cache=F}
 contour(kc.matern,filled= TRUE,val=sqrt(kc.matern$krige.var),
-coords.data=geodataset$coords,xlim=range(dataset$x),ylim=range(dataset$y),
-col = gray(seq(1, 0.1, l = 30)))
+coords.data=geodataset$coords,xlim=range(dataset$x),ylim=range(dataset$y), col = gray(seq(1, 0.1, l = 30)), borders = poly84[,1:3])
 ```
 
-```{r cache=T}
+```{r cache=F}
 xv.matern <- xvalid(geodataset, model =lk.matern, reestimate = F)
 ```
 
-```{r cache=T}
+```{r cache=F}
 VC1.matern <- abs(mean(xv.matern$error/sqrt(xv.matern$krige.var)))
 VC2.matern <- sqrt(mean((xv.matern$error/sqrt(xv.matern$krige.var))^2))
 VC3.matern <- sqrt(mean(xv.matern$error^2))
@@ -588,8 +537,8 @@ data.frame( index = c("VC1", "VC2", "VC3"), value = c(VC1.matern, VC2.matern, VC
 
 
 
-```{r cache=T}
-save.image(".RData")
+```{r cache=F}
+save.image("Data.RData")
 ```
 
 
