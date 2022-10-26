@@ -1,32 +1,38 @@
 ---
-title: "Assignment 1"
+title: "Assignment 1 Spatial Epidemiology"
+subtitle: "Elevation of a small islet in Delta d’Ebre"
 author: "Ferrara Lorenzo, Lucchini Marco"
+date: '25-10-2022'
 output:
   pdf_document: default
   html_document:
     df_print: paged
+    
 ---
 
 ```{r include=FALSE}
 knitr::opts_chunk$set( echo=F )
 ```
 
-## Description
-### The data were collected during a study of the settlement pattern of common terns on a small islet in the Delta d’Ebre (Hernandez and Ruiz, range3), particularly in the mouths of the Ebre river. The islet was inspected at two-day intervals throughout the range0 breeding season. The data include the location of each nest, its elevation above sea level, and elevations at a number of additional points (points without nest) on the islet. In the file called elevationsIslet.txt, contains the information of the coordinates and elevation above sea, and in file, called poly84.txt contains the coordinates of the borders of the islet. The aim is to predict the elevation above sea level along the small islet using a kriging interpolation. 
+# Description
+
+The data were collected during a study of the settlement pattern of common terns on a small islet in the Delta d’Ebre (Hernandez and Ruiz, range3), particularly in the mouths of the Ebre river. The islet was inspected at two-day intervals throughout the range0 breeding season. The data include the location of each nest, its elevation above sea level, and elevations at a number of additional points (points without nest) on the islet. In the file called elevationsIslet.txt, contains the information of the coordinates and elevation above sea, and in file, called poly84.txt contains the coordinates of the borders of the islet. The aim is to predict the elevation above sea level along the small islet using a kriging interpolation. 
+
 
 ```{r eval=FALSE, include=FALSE}
 # load("Data.RData")
 ```
 
-```{r cache=F}
+```{r, include=FALSE}
+setwd("~/Library/CloudStorage/OneDrive-PolitecnicodiMilano/Polimi/5.1 Bayesian methods - Oriol/GEOSTAT/Geostat/Task 1/GIT/Epidemiology_Assignment_1/")
 poly84 <- read.delim("poly84.txt")
 names(poly84)= c("x", "y", "data")
-head(poly84)
-elevationsIslet <- read.delim("elevationsIslet.txt")
-head(elevationsIslet)
+# head(poly84)
+dataset <- read.delim("elevationsIslet.txt")
+# head(elevationsIslet)
 ```
 
-### 1) Explore the requirement of stationary mean of the process. In case this requirement is not met, detrend the data to ensure that the process is stationary in mean. Discuss the results and show the plot of the results
+## 1) Explore the requirement of stationary mean of the process. In case this requirement is not met, detrend the data to ensure that the process is stationary in mean. Discuss the results and show the plot of the results
 
 Firstly, we plot the locations to see the spatial distribution of the data
 
@@ -37,26 +43,25 @@ library(gstat)
 library(sp)
 ```
 
-```{r cache=F}
-dataset = elevationsIslet
-data_for_bubble = dataset
-coordinates(data_for_bubble) <- c('x','y')
-bubble(data_for_bubble,'data',do.log=TRUE,key.space='bottom')
-rm(data_for_bubble)
-```
+```{r}
+coordinates(dataset) <- c('x','y')
+#bubble(dataset,'data', col=dataset$data, key.space='bottom')
 
-METTERLO IN SCALA D COLORI
+rbPal <- colorRampPalette(c('green','black'))
+col_scale <- rbPal(10)[as.numeric(cut(dataset$data,breaks = 10))]
+rbPal_neg <- colorRampPalette(c('Red','pink'))
+col_scale[dataset$data<0] = rbPal_neg(10)[as.numeric(cut(dataset$data[dataset$data<0],breaks = 10))]
+plot(dataset, pch = 20, col=col_scale, xlim = c(-2.1, 124), ylim = c(-90, 89), main = "Elevation of the islet")
+lines(poly84, lwd=2)
+legend('topright', pch = 16, c("-9.5", "0", "7", "18", "39.6"), col=c("#FF0000", "#FF959D", "#00E200" ,"#005500", "#001C00"))
+```
 
 
 We also look at the distribution in relation to the x-coordinates (E-W) and y-coordinates(N-S).
 
-```{r cache=F}
-geodataset <- as.geodata(dataset)
-plot(geodataset, borders = poly84[,1:2])[1]
-```
-
-
 ```{r}
+geodataset <- as.geodata(dataset)
+#plot(geodataset, borders=poly84[c("x","y")], trend="2nd")
 par(mfrow=c(1,2))
 with(geodataset , plot(coords[, 1], data, xlab = "x",ylab = "data", pch = 20, cex = 0.7))
 #add lowess smoother
@@ -67,35 +72,38 @@ with(geodataset , plot(coords[, 2], data, xlab = "y",ylab = "data", pch = 20, ce
 lines(lowess(geodataset$data ~ geodataset$coords[, 2]))
 ```
 
-The plots show a concentration of high values in the east (data are centered in x=50) and in the north (data are very dense from y=0 to y=50) 
+The plots show a concentration of high values in the extreme east and west of the islet and we can observe a grater density in the north.
 
 The process doesn't seem stationary, indeed there is a clear quadratic trend along the x direction. In addition we try using the y direction as regressor, to find a possible linear or quadratic trend.
 
-```{r cache=F}
+```{r cache=T}
 lm <- lm(data ~ x + y + I(x^2) + I(y^2), data = dataset)
 summary(lm)
 ```
 
 The linear term in y doesn't seem significant, so we remove it.
 
-```{r cache=F}
-lm <- lm(data ~ x + I(x^2) + I(y^2), data = dataset)
-summary(lm)
+```{r cache=T, include=FALSE}
+lm2 <- lm(data ~ x + I(x^2) + I(y^2), data = dataset)
+summary(lm2)
+# par(mfrow=c(2,2))
+# plot(lm2)
 ```
 
-Now we have obtained a model in which all regressor seem to be significant => So we save the residuals of our linear model and look at the de-trended data:
+Now we have obtained a model in which all regressor seem to be significant. We save the residuals of our linear model and look at the de-trended data:
 
-```{r cache=F}
+```{r cache=T}
+setwd("~/Library/CloudStorage/OneDrive-PolitecnicodiMilano/Polimi/5.1 Bayesian methods - Oriol/GEOSTAT/Geostat/Task 1/GIT/Epidemiology_Assignment_1/")
+df <- read.delim("elevationsIslet.txt")
 residuals <- round(residuals(lm), digits = 3)
-dataset.new <- cbind(dataset, residuals)
-head(dataset.new)
+dataset.new <- cbind(df, residuals)
+# head(dataset.new)
 
 
 geodataset.residuals <- as.geodata(dataset.new, data.col = 4)
-plot(geodataset.residuals)
-```
 
-```{r}
+# plot(geodataset.residuals, borders=poly84[c("x","y")])  # trend="2nd"
+
 par(mfrow=c(1,2))
 with(geodataset.residuals , plot(coords[, 1], data, xlab = "x",ylab = "data", pch = 20, cex = 0.7))
 #add lowess smoother
@@ -105,6 +113,16 @@ with(geodataset.residuals , plot(coords[, 2], data, xlab = "y",ylab = "data", pc
 #add lowess smoother
 lines(lowess(geodataset.residuals$data ~ geodataset.residuals$coords[, 2]))
 ```
+
+
+```{r}
+rbPal <- colorRampPalette(c('red', 'green', 'blue', 'black'))
+col_scale <- rbPal(4)[as.numeric(cut(geodataset.residuals$data,breaks = 4))]
+plot(dataset, pch = 20, col=col_scale, xlim = c(-2.1, 124), ylim = c(-90, 89), main = "Detrended elevation of the islet")
+lines(poly84, lwd=2)
+legend('topright', pch = 16, c("1st", "2nd", "3rd", "4th"), col=c('red', 'green', 'blue', 'black'))
+```
+NON E' COERENTE DAL QUELLO OTTENUTO CON PLOT
 
 We don't notice any particular trend so this new dataset seems stationary! And now the data seems distributed around 0.
 
