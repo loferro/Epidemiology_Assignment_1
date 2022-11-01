@@ -395,15 +395,12 @@ Let's try using the gaussian model to do our prediction step:
 
 ```{r  }
 kc.gaussian<-krige.conv(geodataset,locations= dsgr.grid,
-krige =krige.control(type.krige="OK",obj.m = lk.gaussian))
+                        krige = krige.control(type.krige="OK",obj.m = lk.gaussian, trend.l="2nd",trend.d= "2nd"))
+
 image(kc.gaussian,xlim=range(poly84$x),ylim=range(poly84$y), borders = poly84)
 ```
 
-```{r  }
-kc.gaussian<-krige.conv(geodataset,locations= dsgr.grid,
-krige =krige.control(type.krige="SK",obj.m = lk.gaussian))
-image(kc.gaussian,xlim=range(poly84$x),ylim=range(poly84$y), borders = poly84)
-```
+
 ```{r  }
 contour(kc.gaussian,filled= TRUE,
 coords.data=geodataset$coords,col=terrain.colors(31),xlim=range(poly84$x),ylim=range(poly84$y),borders = poly84)
@@ -436,7 +433,7 @@ data.frame( index = c("VC1", "VC2", "VC3"), value = c(VC1.gaussian, VC2.gaussian
 #### Matern 
 ```{r  }
 kc.matern<-krige.conv(geodataset,locations= dsgr.grid,
-krige = krige.control(type.krige="OK",obj.m = lk.matern))
+krige = krige.control(type.krige="OK",obj.m = lk.matern,  trend.l="2nd", trend.d= "2nd"))
 image(kc.matern, xlim=range(poly84$x),ylim=range(poly84$y), borders = poly84)
 ```
 ```{r  }
