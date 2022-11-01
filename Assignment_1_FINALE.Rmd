@@ -2,22 +2,12 @@
 title: "Assignment 1 Spatial Epidemiology"
 author: "Ferrara Lorenzo, Lucchini Marco"
 subtitle: Elevation of a small islet in Delta d’Ebre
+date: '25-10-2022'
 output:
   html_document:
     df_print: paged
 ---
 
----
-title: "Assignment 1 Spatial Epidemiology"
-subtitle: "Elevation of a small islet in Delta d’Ebre"
-author: "Ferrara Lorenzo, Lucchini Marco"
-date: '25-10-2022'
-output:
-  pdf_document: default
-  html_document:
-    df_print: paged
-    
----
 
 ```{r include=FALSE}
 knitr::opts_chunk$set( echo=F )
@@ -200,7 +190,7 @@ vario.b.robust <- variog(geodata = geodataset.residuals, option = "bin",pairs.mi
 plot(vario.b.robust, main = "EMPIRICAL VARIOGRAM (Robust)\nBINNED",cex.main = 1, cex.lab = 1, cex = 1, pch = 16)
 ```
 
-In the variogram of the residuals the values increases until certain distance, and then they keep constant.
+In the variogram of the residuals the values increases until certain distance, and then they keep constant. That's ok since it's the behaviour that we expect from a stationary variogram.
 
 ### 3) Check the hypothesis of the spatial independence
 
@@ -276,7 +266,7 @@ more or less at the same range. Then, this process is isotropic.
 
 OPPURE
 
-We notice that the Rose diagram is not perfectly circular: it is slightly elliptical, with major range in the 90 direction => Zonal anistropy.
+We notice that the Rose diagram is not perfectly circular: it is slightly elliptical, with major range in the 45 direction => Zonal anistropy.
 
 => In conclusion we have a combined anisotropy, so we can't make the assumption of isotropic process, which is necessary for the correct use of the kriging techniques, since the theoretical variograms used for krigring are based on isotropic models.
 
@@ -287,142 +277,25 @@ We notice that the Rose diagram is not perfectly circular: it is slightly ellipt
 <!-- The higher is κ, the smoother the spatial process. -->
 <!-- Special cases κ = 1/2 exponential model and κ → ∞ Gaussian mode -->
 
-
-```{r  }
-
-variogramma <- variog(geodata = geodataset.residuals, max.dist = dist.max.data, estimator.type = "modulus")
-
-# windows(); eyefit(variogramma, silent = FALSE)
-
+```{r}
+variogramma <- variog(geodata = geodataset.residuals, estimator.type = "modulus")
 ```
 
-<!-- tau_sq = nugget -->
-<!-- sigma_sq = sill -->
-
-```{r  , include=FALSE}
- 
-wls.exponential <- variofit(variogramma, cov.model = "exponential", ini = c(91, 25), fix.nugget = F, weights = "cressie")
-
-wls.gaussian <- variofit(variogramma, cov.model = "gaussian", ini = c(86, 8), fix.nugget = F, weights = "cressie")
-
-wls.spherical <- variofit(variogramma, cov.model = "spherical", ini = c(84, 32), fix.nugget = F, weights = "cressie")
-
-wls.matern <- variofit(variogramma, cov.model = "matern", ini = c(88, 19), fix.nugget = F, fix.kappa = T, kappa = 10.27, weights = "cressie")
-wls.matern
-
-
-wls.matern <- variofit(variogramma, cov.model = "matern", ini = c(88, 19), fix.nugget = F, fix.kappa = T, kappa = 0.27, weights = "cressie")
-wls.matern
-
-
-wls.matern <- variofit(variogramma, cov.model = "matern", ini = c(88, 19), fix.nugget = F, fix.kappa = F, kappa = 0.27, weights = "cressie")
-wls.matern
-
-wls.matern <- variofit(variogramma, cov.model = "matern", ini = c(88, 19), fix.nugget = F, fix.kappa = F, kappa = 0, weights = "cressie")
-wls.matern
-
-
-wls.matern <- variofit(variogramma, cov.model = "matern", ini = c(88, 19), fix.nugget = F, weights = "cressie")
-wls.matern
+```{r eval=FALSE, include=FALSE}
+windows(); eyefit(variogramma, silent = FALSE)
 ```
+
+
+We'll use a Maximum Likelihood approach
 
 ```{r}
-temp=c()
-sequenza  = seq(1e-5,4,4/25)
-for(i in sequenza){
-  wls.matern <- variofit(variogramma, cov.model = "matern", ini = c(88, 19), fix.nugget = F, fix.kappa = T, kappa = i, weights = "cressie")
-  temp = c(temp, wls.matern$value)
-}
-plot( sequenza, temp, type="l")
-```
-
-perchè se gli impongo un valore viene un weighted sum minore che nel normale fitting?
-
-#### Exponential
-
-```{r  }
-wls.exponential
-```
-
-#### Gaussian
-```{r  }
-wls.gaussian
-```
-
-#### Spherical
-```{r  }
-wls.spherical
-```
-
-#### Matern
-```{r  }
-wls.matern
-```
-
-$k=1$ so the Matern model redces to a 
-
-
-```{r  , include=F}
-plot(variogramma, main = "PARAMETRIC VARIOGRAMS", cex.main = 1, pch = 16) #empirical variogram
-lines(wls.exponential, lwd = 2, col = "red", max.dist = dist.max.data) # add exponential
-lines(wls.gaussian, lwd = 2, col = "blue", max.dist = dist.max.data) # add guassian
-lines(wls.spherical, lwd = 2, col = "green3", max.dist = dist.max.data) # add spherical
-lines(wls.matern, lwd = 2, col = "yellow", max.dist = dist.max.data) # add matern
-legend(x = "bottomright", inset = 0.01, lty = c(1, 1), col = c("red", "blue", "green3", "yellow"), 
-       legend = c("Exponential", "Gaussian", "Spherical", "Matern"), cex = 1)
-
-```
-
-#### Computing envelops for empirical variograms.
-```{r  , include=FALSE}
-set.seed(10)
-env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = wls.exponential, nsim = 999)
-env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = wls.gaussian, nsim = 999)
-env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = wls.spherical, nsim = 999)
-env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = wls.matern, nsim = 999)
-```
-
-```{R  }
-par(mfrow = c(1, 4))
-plot(variogramma, main = "Exponential", lwd = 2, pch = 16, envelope = env)
-plot(variogramma, main = "Gaussian", lwd = 2, pch = 16, envelope = env)
-plot(variogramma, main = "Spherical", lwd = 2, pch = 16, envelope = env)
-plot(variogramma, main = "Matern", lwd = 2, pch = 16, envelope = env)
-```
-
-
-#### Let's compare the different models
-```{r  }
-
-temp = data.frame( model = c("exponential", 
-                      "gaussian", 
-                      "spherical", 
-                      "matern"), 
-            sum.of.squares = c(summary(wls.exponential)$sum.of.squares, 
-                               summary(wls.gaussian)$sum.of.squares, 
-                               summary(wls.spherical)$sum.of.squares, 
-                               summary(wls.matern)$sum.of.squares)
-)
-
-temp[ order(temp$sum.of.squares),]
-
-```
-
-
-Likelihood approach
-
-```{r  , include=FALSE}
-variogramma <- variog(geodata = geodataset.residuals)
-
 lk.exponential <- likfit(geodataset.residuals, cov.model = "exponential", ini = c(91, 25), lik.method = "REML")
 
-lk.gaussian <- likfit(geodataset.residuals, cov.model = "gaussian", ini = c(86, 8), lik.method = "REML")
+lk.gaussian <- likfit(geodataset.residuals, cov.model = "gaussian", ini = c(101, 11), lik.method = "REML")
 
 lk.spherical <- likfit(geodataset.residuals, cov.model = "spherical", ini = c(91, 22), lik.method = "REML")
 
-lk.matern <- likfit(geodataset.residuals, cov.model = "matern", ini = c(88, 19), fix.nugget = F, fix.kappa = F, kappa = 0.27, lik.method = "REML")
-lk.matern <- likfit(geodataset.residuals, cov.model = "matern", ini = c(91,22), fix.nugget = F, fix.kappa = F, kappa = 0.27, lik.method = "REML")
-
+lk.matern <- likfit(geodataset.residuals, cov.model = "matern", ini = c(88, 19), fix.nugget = F, fix.kappa = F, kappa = 0.14, lik.method = "REML")
 ```
 
 #### Exponential
@@ -448,7 +321,7 @@ lk.matern
 
 ```{r  }
 
-dist.max.data=dist.max.data*2
+dist.max.data=149
 
 plot(variogramma, main = "PARAMETRIC VARIOGRAMS", cex.main = 1, pch = 16) #empirical variogram
 lines(lk.exponential, lwd = 2, col = "red", max.dist = dist.max.data) # add exponential
@@ -461,18 +334,18 @@ legend(x = "bottomright", inset = 0.01, lty = c(1, 1), col = c("red",
 ```
 
 ```{r  , include=FALSE}
-env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.exponential)
-env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.gaussian)
-env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.spherical)
-env <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.matern)
+env.exponential <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.exponential)
+env.gaussian <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.gaussian)
+env.spherical <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.spherical)
+env.matern <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.matern)
 ```
 
 ```{R  }
 par(mfrow = c(1, 4))
-plot(variogramma, main = "Exponential", lwd = 2, pch = 16, envelope = env)
-plot(variogramma, main = "Gaussian", lwd = 2, pch = 16, envelope = env, cex.main = 1)
-plot(variogramma, main = "Spherical", lwd = 2, pch = 16, envelope = env, cex.main = 1)
-plot(variogramma,main = "Matern", lwd = 2, pch = 16, envelope = env, cex.main = 1)
+plot(variogramma, main = "Exponential", lwd = 2, pch = 16, envelope = env.exponential)
+plot(variogramma, main = "Gaussian", lwd = 2, pch = 16, envelope = env.gaussian, cex.main = 1)
+plot(variogramma, main = "Spherical", lwd = 2, pch = 16, envelope = env.spherical, cex.main = 1)
+plot(variogramma, main = "Matern", lwd = 2, pch = 16, envelope = env.matern, cex.main = 1)
 ```
 
 All the simulated variograms contain the empirical variogram so we don't have evidence to exclude any model.
@@ -500,6 +373,8 @@ The two fitted models with the highest loglikelihood are the Matern model and th
 ### a. Compare both kriging predictions using cross-validation, and propose the best model.
 ### b. Show the predictions and their standard errors. 
 
+First werate a grid where we'll perform our kriging predicitons
+
 ```{r  }
 rnx <- range(geodataset$coords[,1]) #Minimum and maximum of the latitude
 rny <- range(geodataset$coords[,2]) #Minimum and maximum of the longitude
@@ -516,21 +391,27 @@ points(dsgr.grid, pch = 19, col = 4, cex = 0.25)
 
 #### Gaussian
 
+Let's try using the gaussian model to do our prediction step:
+
 ```{r  }
 kc.gaussian<-krige.conv(geodataset,locations= dsgr.grid,
-krige =krige.control(type.krige="OK",obj.m = lk.gaussian,
-trend.l="1st" ,trend.d= "1st"))
-image(kc.gaussian,xlim=range(dataset$x),ylim=range(dataset$y), borders = poly84)
+krige =krige.control(type.krige="OK",obj.m = lk.gaussian))
+image(kc.gaussian,xlim=range(poly84$x),ylim=range(poly84$y), borders = poly84)
 ```
 
 ```{r  }
+kc.gaussian<-krige.conv(geodataset,locations= dsgr.grid,
+krige =krige.control(type.krige="SK",obj.m = lk.gaussian))
+image(kc.gaussian,xlim=range(poly84$x),ylim=range(poly84$y), borders = poly84)
+```
+```{r  }
 contour(kc.gaussian,filled= TRUE,
-coords.data=geodataset$coords,col=terrain.colors(31),xlim=range(dataset$x),ylim=range(dataset$y),borders = poly84)
+coords.data=geodataset$coords,col=terrain.colors(31),xlim=range(poly84$x),ylim=range(poly84$y),borders = poly84)
 ```
 
 ```{r  }
 contour(kc.gaussian,filled= TRUE,val=sqrt(kc.gaussian$krige.var),
-coords.data=geodataset$coords,xlim=range(dataset$x),ylim=range(dataset$y),
+coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y),
 col = gray(seq(1, 0.1, l = 30)), main="Plot of Standard Deviation",borders = poly84)
 ```
  
@@ -555,18 +436,17 @@ data.frame( index = c("VC1", "VC2", "VC3"), value = c(VC1.gaussian, VC2.gaussian
 #### Matern 
 ```{r  }
 kc.matern<-krige.conv(geodataset,locations= dsgr.grid,
-krige = krige.control(type.krige="OK",obj.m = lk.matern, trend.l="1st" ,trend.d= "1st"))
-image(kc.matern, xlim=range(dataset$x),ylim=range(dataset$y), borders = poly84)
+krige = krige.control(type.krige="OK",obj.m = lk.matern))
+image(kc.matern, xlim=range(poly84$x),ylim=range(poly84$y), borders = poly84)
 ```
-
 ```{r  }
 contour(kc.matern,filled= TRUE,
-coords.data=geodataset$coords,xlim=range(dataset$x),ylim=range(dataset$y), col=terrain.colors(30), borders = poly84)
+coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y), col=terrain.colors(30), borders = poly84)
 ```
 
 ```{r  }
 contour(kc.matern,filled= TRUE,val=sqrt(kc.matern$krige.var),
-coords.data=geodataset$coords,xlim=range(dataset$x),ylim=range(dataset$y), col = gray(seq(1, 0.1, l = 30)), borders = poly84[,1:3])
+coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y), col = gray(seq(1, 0.1, l = 30)), borders = poly84[,1:3])
 ```
 
 ```{r  }
