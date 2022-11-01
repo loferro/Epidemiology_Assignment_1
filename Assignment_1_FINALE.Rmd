@@ -85,8 +85,6 @@ The linear term in y doesn't seem significant, so we remove it.
 ```{r   include=FALSE}
 lm2 <- lm(data ~ x + I(x^2) + I(y^2), data = dataset)
 summary(lm2)
-# par(mfrow=c(2,2))
-# plot(lm2)
 ```
 
 Now we have obtained a model in which all regressors seem to be significant. We save the residuals of our linear model and look at the de-trended data:
@@ -196,10 +194,10 @@ In the variogram of the residuals the values increases until certain distance, a
 
 To check the hypothesis of the spatial independence we use a Monte Carlo approach 
 
-```{r eval=FALSE,  ALSE, include=FALSE}
-for( i in 41:100){
+```{r eval=FALSE, include=FALSE}
+for( i in 1:100){
   set.seed(i) #fix the seed
-  indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 2000)
+  indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 3000)
   # plot(vario.b.robust, envelope = indep.env, main = "CONFIDENCE BANDS FOR INDEPENDENT MODEL",lwd = 2, pch = 16)
   
   cat(i, ", ")
@@ -213,7 +211,7 @@ for( i in 41:100){
 
 ```{r  }
 set.seed(41) #fix the seed
-indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 2000)
+indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 3000)
 plot(vario.b.robust, envelope = indep.env, main = "CONFIDENCE BANDS FOR INDEPENDENT MODEL",lwd = 2, pch = 16)
 ```
 
@@ -288,7 +286,7 @@ windows(); eyefit(variogramma, silent = FALSE)
 
 We'll use a Maximum Likelihood approach
 
-```{r}
+```{r include=FALSE}
 lk.exponential <- likfit(geodataset.residuals, cov.model = "exponential", ini = c(91, 25), lik.method = "REML")
 
 lk.gaussian <- likfit(geodataset.residuals, cov.model = "gaussian", ini = c(101, 11), lik.method = "REML")
