@@ -1,16 +1,21 @@
 ---
 title: "Assignment 1 Spatial Epidemiology"
 author: "Ferrara Lorenzo, Lucchini Marco"
-subtitle: Elevation of a small islet in Delta d’Ebre
-date: '25-10-2022'
+date: "25-10-2022"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
+subtitle: Elevation of a small islet in Delta d’Ebre
 ---
 
 
 ```{r include=FALSE}
 knitr::opts_chunk$set( echo=F )
+knitr::opts_chunk$set(out.width = '70%')
+knitr::opts_chunk$set(fig.align = "center")
+knitr::opts_chunk$set(tidy =TRUE)
+knitr::opts_chunk$set(message = FALSE)
 ```
 
 # Description
@@ -50,9 +55,9 @@ rbPal <- colorRampPalette(c('green','black'))
 col_scale <- rbPal(10)[as.numeric(cut(dataset$data,breaks = 10))]
 rbPal_neg <- colorRampPalette(c('Red','pink'))
 col_scale[dataset$data<0] = rbPal_neg(10)[as.numeric(cut(dataset$data[dataset$data<0],breaks = 10))]
-plot(dataset, pch = 20, col=col_scale, xlim = c(-2.1, 124), ylim = c(-90, 89), main = "Elevation of the islet")
+plot(dataset, pch = 20, col=col_scale,  ylim = c(-90, 89), main = "Elevation of the islet")
 lines(poly84, lwd=2)
-legend('topright', pch = 16, c("-9.5", "0", "7", "18", "39.6"), col=c("#FF0000", "#FF959D", "#00E200" ,"#005500", "#001C00"))
+legend('bottomright', pch = 16, c("-9.5", "0", "7", "18", "39.6"), col=c("#FF0000", "#FF959D", "#00E200" ,"#005500", "#001C00"))
 ```
 
 
@@ -71,7 +76,7 @@ with(geodataset , plot(coords[, 2], data, xlab = "y",ylab = "data", pch = 20, ce
 lines(lowess(geodataset$data ~ geodataset$coords[, 2]))
 ```
 
-The plots show a concentration of high values in the extreme east and west of the islet and we can observe a grater density in the north.
+The plots show a concentration of high values in the extreme east and west of the islet and we can observe a greater density in the north.
 
 The process doesn't seem stationary, indeed there is a clear quadratic trend along the x direction. In addition we try using the y direction as regressor, to find a possible linear or quadratic trend.
 
@@ -82,7 +87,7 @@ summary(lm)
 
 The linear term in y doesn't seem significant, so we remove it.
 
-```{r   include=FALSE}
+```{r }
 lm2 <- lm(data ~ x + I(x^2) + I(y^2), data = dataset)
 summary(lm2)
 ```
@@ -102,7 +107,7 @@ geodataset.residuals <- as.geodata(dataset.new, data.col = 4)
 ```
 
 
-```{r}
+```{r include = FALSE}
 rbPal <- colorRampPalette(c('red', 'green', 'blue', 'black'))
 col_scale <- rbPal(4)[as.numeric(cut(geodataset.residuals$data,breaks = 4))]
 plot(dataset, pch = 20, col=col_scale, xlim = c(-2.1, 124), ylim = c(-90, 89), main = "Detrended elevation of the islet")
@@ -134,11 +139,13 @@ We don't notice any particular trend so this new dataset seems stationary!
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
-### 2) Explore the spatial dependence of the elevation variable using the variogram cloud and bins and the empirical variogram. Discuss the results and plot them
+\newpage
+
+## 2) Explore the spatial dependence of the elevation variable using the variogram cloud and bins and the empirical variogram. Discuss the results and plot them
 
 We try to analyse the spatial dependence through a Variogram Cloud, using the Robust Estimators (since the classical one might consider outliers those values which are not necessarily outliers)
 
-```{r  }
+```{r results='hide'}
 vario.cloud.robust <- variog(geodata = geodataset.residuals, option = "cloud", estimator.type = "modulus")
 plot(vario.cloud.robust, main = "CLOUD", cex.main = 1, cex.lab = 1)
 ```
@@ -146,7 +153,7 @@ plot(vario.cloud.robust, main = "CLOUD", cex.main = 1, cex.lab = 1)
 The variability at small distances appears a bit greater than that for larger distances. 
 => We reduce the density of the plot by reducing the maximum distance over which the variance are calculate. 
 
-```{r  }
+```{r results='hide'}
 dist.max.data  <- max(vario.cloud.robust$u)/2
 
 vario.cloud.robust <- variog(geodata = geodataset.residuals,option = "cloud", estimator.type = "modulus", max.dist = dist.max.data)
@@ -154,7 +161,7 @@ vario.cloud.robust <- variog(geodata = geodataset.residuals,option = "cloud", es
 plot(vario.cloud.robust, main = "CLOUD", cex.main = 1, cex.lab = 1)
 ```
 
-```{r  }
+```{r results='hide' }
 
 vario.bc.robust <- variog(geodata = geodataset.residuals, option = "bin",bin.cloud = TRUE, pairs.min = 30, max.dist = dist.max.data, estimator.type = "modulus")
 
@@ -165,24 +172,24 @@ plot(vario.bc.robust, bin.cloud = TRUE, cex.lab = 1, main = "\nBINNED BOXPLOTS",
 # round(vario.bc.robust$bins.lim, 2)
 ```
 
-```{r  }
+```{r results='hide' }
 vario.bc.robust$ind.bin
 ```
 
 => All the bins have at least pairs.min=30 observations each, indeed they have:
 
-```{r  }
+```{r  results='hide'}
 vario.bc.robust$n
 ```
 
 Empirical Variogram
-```{r eval=FALSE, include=FALSE}
+```{r eval=FALSE, include=FALSE, results='hide'}
 vario.b.classical <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "classical",uvec = seq(1, dist.max.data, l = 13))
 
 plot(vario.b.classical, main = "EMPIRICAL VARIOGRAM (Classical)\nBINNED",cex.main = 1, cex.lab = 1, cex = 1, pch = 16)
 ```
 
-```{r  }
+```{r results='hide' }
 vario.b.robust <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "modulus",uvec = seq(1, dist.max.data, l = 13))
 
 plot(vario.b.robust, main = "EMPIRICAL VARIOGRAM (Robust)\nBINNED",cex.main = 1, cex.lab = 1, cex = 1, pch = 16)
@@ -190,7 +197,9 @@ plot(vario.b.robust, main = "EMPIRICAL VARIOGRAM (Robust)\nBINNED",cex.main = 1,
 
 In the variogram of the residuals the values increases until certain distance, and then they keep constant. That's ok since it's the behaviour that we expect from a stationary variogram.
 
-### 3) Check the hypothesis of the spatial independence
+\newpage
+
+## 3) Check the hypothesis of the spatial independence
 
 To check the hypothesis of the spatial independence we use a Monte Carlo approach 
 
@@ -217,13 +226,15 @@ plot(vario.b.robust, envelope = indep.env, main = "CONFIDENCE BANDS FOR INDEPEND
 
 All the values of the empirical variogram are inside the envelope, therefore the process has no spatial dependence.
 
-### 4) Check the isotropy property of the process. Comment the results, it’s not necessary to overcome the anisotropy.
+\newpage
+
+## 4) Check the isotropy property of the process. Comment the results, it’s not necessary to overcome the anisotropy.
 
 To check the anisotropy we need to compute the directional variogram in the 4 main directions: 0º, 45º,90º and 135º. 
 
 <!-- classical -->
 
-```{r eval=FALSE, include=FALSE}
+```{r eval=FALSE, include=FALSE, results='hide'}
 variod <- variog4(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "classical",uvec = seq(1, dist.max.data, l = 13))
 
 plot(variod, lyt = 2, legend = FALSE)
@@ -233,7 +244,7 @@ legend(x = "bottomright", inset = 0.01, lty = c(1, 2, 3, 4),col = c("black", "re
 
 <!-- oppure modulus? -->
 
-```{r  }
+```{r  results='hide'}
 variod <- variog4(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "modulus",uvec = seq(1, dist.max.data, l = 13))
 
 plot(variod, lyt = 2, legend = FALSE)
@@ -245,7 +256,7 @@ The directional variograms don't seem to be perfectly overlapping: they might ha
 
 Let's also analyse the range observing the Rose Diagram:
 
-```{r  }
+```{r  results='hide'}
 source("RoseDiagram.R")
 
 NumCases = length(variod$`0`)
@@ -268,14 +279,14 @@ We notice that the Rose diagram is not perfectly circular: it is slightly ellipt
 
 => In conclusion we have a combined anisotropy, so we can't make the assumption of isotropic process, which is necessary for the correct use of the kriging techniques, since the theoretical variograms used for krigring are based on isotropic models.
 
-
-### 5) Propose four theoretical variograms and estimate the parameters via restricted maximum likelihood or weighed least square. Select the two variograms which best fit the data. Explain the parameters of the chosen variogram (sill, nugget, range and kappa).
+\newpage
+## 5) Propose four theoretical variograms and estimate the parameters via restricted maximum likelihood or weighed least square. Select the two variograms which best fit the data. Explain the parameters of the chosen variogram (sill, nugget, range and kappa).
 
 <!-- The κ parameter controls the smoothness of the process. -->
 <!-- The higher is κ, the smoother the spatial process. -->
 <!-- Special cases κ = 1/2 exponential model and κ → ∞ Gaussian mode -->
 
-```{r}
+```{r results='hide'}
 variogramma <- variog(geodata = geodataset.residuals, estimator.type = "modulus")
 ```
 
@@ -296,23 +307,23 @@ lk.spherical <- likfit(geodataset.residuals, cov.model = "spherical", ini = c(91
 lk.matern <- likfit(geodataset.residuals, cov.model = "matern", ini = c(88, 19), fix.nugget = F, fix.kappa = F, kappa = 0.14, lik.method = "REML")
 ```
 
-#### Exponential
+### Exponential
 ```{r  }
 lk.exponential
 ```
 
-#### Gaussian
+### Gaussian
 ```{r  }
 lk.gaussian
 ```
 
-#### Spherical
+### Spherical
 ```{r  }
 lk.spherical
 ```
 
 
-#### Matern
+### Matern
 ```{r  }
 lk.matern
 ```
@@ -338,7 +349,7 @@ env.spherical <- variog.model.env(geodataset.residuals, obj.variog = variogramma
 env.matern <- variog.model.env(geodataset.residuals, obj.variog = variogramma, model.pars = lk.matern)
 ```
 
-```{R  }
+```{r  }
 par(mfrow = c(1, 4))
 plot(variogramma, main = "Exponential", lwd = 2, pch = 16, envelope = env.exponential)
 plot(variogramma, main = "Gaussian", lwd = 2, pch = 16, envelope = env.gaussian, cex.main = 1)
@@ -367,7 +378,8 @@ temp.lk[ order(temp.lk$loglikelihood, decreasing = T),]
 
 The two fitted models with the highest loglikelihood are the Matern model and the Gaussian model. So we'll use these two to perform the kriging prediction step.
 
-### 6) Predict the elevations along all the area of study using the two variogram selected in point 4. Discuss the type of kriging chosen:
+\newpage
+## 6) Predict the elevations along all the area of study using the two variogram selected in point 4. Discuss the type of kriging chosen:
 ### a. Compare both kriging predictions using cross-validation, and propose the best model.
 ### b. Show the predictions and their standard errors. 
 
