@@ -392,25 +392,21 @@ points(dsgr.grid, pch = 19, col = 4, cex = 0.25)
 
 Let's try using the Gaussian model to do our prediction step:
 
-```{r  }
+```{r  results = "hide" }
 kc.gaussian<-krige.conv(geodataset,locations= dsgr.grid,
                         krige = krige.control(type.krige="OK",obj.m = lk.gaussian, trend.l="2nd",trend.d= "2nd"))
 
 image(kc.gaussian,xlim=range(poly84$x), ylim=range(poly84$y), borders = poly84)
 ```
 
-```{r  }
-contour(kc.gaussian,filled= TRUE,
-coords.data=geodataset$coords,col=terrain.colors(31),xlim=range(poly84$x),ylim=range(poly84$y),borders = poly84)
+```{r  results = "hide"}
+contour(kc.gaussian,filled= TRUE,coords.data=geodataset$coords, col=terrain.colors(31), xlim=range(poly84$x), ylim=range(poly84$y), borders = poly84, main = "Plot of predictions")
+
+contour(kc.gaussian,filled= TRUE,val=sqrt(kc.gaussian$krige.var), coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y), col = gray(seq(1, 0.1, l = 30)), main="Plot of Standard Deviation",borders = poly84)
 ```
 
-```{r  }
-contour(kc.gaussian,filled= TRUE,val=sqrt(kc.gaussian$krige.var),
-coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y),
-col = gray(seq(1, 0.1, l = 30)), main="Plot of Standard Deviation",borders = poly84)
-```
  
-```{r  }
+```{r results = "hide" }
 xv.gaussian <- xvalid(geodataset, model =lk.gaussian, reestimate = F)
 
 names(xv.gaussian)
@@ -429,7 +425,7 @@ data.frame( index = c("VC1", "VC2", "VC3"), value = c(VC1.gaussian, VC2.gaussian
 <!-- ############################ -->
 
 #### Matern 
-```{r  }
+```{r  results = "hide" }
 kc.matern<-krige.conv(geodataset,locations= dsgr.grid,
 krige = krige.control(type.krige="OK",obj.m = lk.matern,  trend.l="2nd", trend.d= "2nd"))
 image(kc.matern, xlim=range(poly84$x),ylim=range(poly84$y), borders = poly84)
@@ -444,7 +440,7 @@ contour(kc.matern,filled= TRUE,val=sqrt(kc.matern$krige.var),
 coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y), col = gray(seq(1, 0.1, l = 30)), borders = poly84[,1:3])
 ```
 
-```{r  }
+```{r results = "hide"  }
 xv.matern <- xvalid(geodataset, model =lk.matern, reestimate = F)
 ```
 
@@ -464,7 +460,7 @@ data.frame( index = c("VC1", "VC2", "VC3"), value = c(VC1.matern, VC2.matern, VC
 
 
 ```{r  }
-save.image("Data.RData")
+# save.image("Data.RData")
 ```
 
 
