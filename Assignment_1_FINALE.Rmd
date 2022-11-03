@@ -198,7 +198,7 @@ From what we can observe the variogram of the residuals the values increases unt
 To check the hypothesis of the spatial independence we use a Monte Carlo approach 
 
 ```{r  }
-set.seed(41) #fix the seed
+set.seed(5000) #fix the seed
 indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 1500)
 plot(vario.b.robust, envelope = indep.env, main = "CONFIDENCE BANDS FOR INDEPENDENT MODEL",lwd = 2, pch = 16)
 ```
@@ -249,12 +249,7 @@ crit.val = 120)
 ```
 
 
-We can observe that the Rose diagram is more or less a circle. At different directions, the variance is reached
-more or less at the same range. Then, this process is isotropic.
-
-OPPURE
-
-We notice that the Rose diagram is not perfectly circular: it is slightly elliptical, with major range in the 45 direction => Zonal anistropy.
+We notice that the Rose diagram is not perfectly circular: it is slightly elliptical, with major range in the 45° and 90° direction => Zonal anistropy.
 
 => In conclusion we have a combined anisotropy, so we can't make the assumption of isotropic process, which is necessary for the correct use of the kriging techniques, since the theoretical variograms used for krigring are based on isotropic models.
 
