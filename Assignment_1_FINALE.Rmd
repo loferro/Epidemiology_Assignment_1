@@ -396,13 +396,13 @@ The residuals used in the variogram estimation were obtained after a quadratic m
 Let's first try using the Gaussian model to do our prediction step:
 
 
-```{r  results = "hide" }
+```{r  results = "hide", out.width = '60%' }
 kc.gaussian<-krige.conv(geodataset,locations= dsgr.grid,
                         krige = krige.control(type.krige="OK",obj.m = lk.gaussian, trend.l="2nd",trend.d= "2nd"))
 image(kc.gaussian,xlim=range(poly84$x), ylim=range(poly84$y), borders = poly84, coords.data = as.matrix(dataset.new[,c(1,2)]), main = "Predicted elevation of the islet")
 ```
 
-```{r  }
+```{r  out.width = '60%'}
 contour(kc.gaussian,filled= TRUE,val=sqrt(kc.gaussian$krige.var), coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y), col = gray(seq(1, 0.1, l = 30)), main="Standard Deviation of the prediction",borders = poly84)
 ```
 
@@ -418,15 +418,20 @@ VC1.gaussian <- abs(mean(xv.gaussian$error/sqrt(xv.gaussian$krige.var)))
 VC2.gaussian <- sqrt(mean((xv.gaussian$error/sqrt(xv.gaussian$krige.var))^2))
 VC3.gaussian <- sqrt(mean(xv.gaussian$error^2))
 
-data.frame( index = c("VC1", "VC2", "VC3"), value = c(VC1.gaussian, VC2.gaussian, VC3.gaussian) )
+comparison = data.frame( index = c("VC1", "VC2", "VC3"))
+comparison["Gaussian"] =c(VC1.gaussian, VC2.gaussian, VC3.gaussian)
 
 ```
 
 
 <!-- ############################ -->
 
+
 #### Matern 
-```{r  results = "hide" }
+\
+Let's now use the Matern model
+
+```{r  results = "hide", out.width = '60%'}
 kc.matern<-krige.conv(geodataset,locations= dsgr.grid,
 krige = krige.control(type.krige="OK",obj.m = lk.matern,  trend.l="2nd", trend.d= "2nd"))
 image(kc.matern, xlim=range(poly84$x),ylim=range(poly84$y), borders = poly84, coords.data = as.matrix(dataset.new[,c(1,2)]), main = "Predicted elevation of the islet")
@@ -435,7 +440,7 @@ image(kc.matern, xlim=range(poly84$x),ylim=range(poly84$y), borders = poly84, co
 #contour(kc.matern,filled= TRUE, coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y), col=terrain.colors(30), borders = poly84)
 ```
 
-```{r  }
+```{r  out.width = '60%'}
 contour(kc.matern,filled= TRUE,val=sqrt(kc.matern$krige.var),
 coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y), col = gray(seq(1, 0.1, l = 30)), borders = poly84[,1:3], main  = "Standard Deviation of the prediction")
 ```
@@ -449,13 +454,18 @@ VC1.matern <- abs(mean(xv.matern$error/sqrt(xv.matern$krige.var)))
 VC2.matern <- sqrt(mean((xv.matern$error/sqrt(xv.matern$krige.var))^2))
 VC3.matern <- sqrt(mean(xv.matern$error^2))
 
-data.frame( index = c("VC1", "VC2", "VC3"), value = c(VC1.matern, VC2.matern, VC3.matern) )
+comparison["Matern"] = c(VC1.matern, VC2.matern, VC3.matern) 
 ```
 
 
+Look at the performance of the two model through 3 goodness indexes:
+
+```{r}
+comparison
+```
 
 
-
+Therefore we decide to choose the Matern model as it has a lower VC3, a VC1 closer to 0 and a VC2 closer to 1.
 
 
 
