@@ -82,6 +82,7 @@ The process doesn't seem stationary, indeed there is a clear quadratic trend alo
 
 ```{r  }
 lm <- lm(data ~ x + y + I(x^2) + I(y^2), data = dataset)
+lm <- lm(data ~ x + y + I(x^2), data = dataset)
 summary(lm)
 ```
 
@@ -143,7 +144,7 @@ We don't notice any particular trend so this new dataset seems stationary!
 
 ## 2) Explore the spatial dependence of the elevation variable using the variogram cloud and bins and the empirical variogram. Discuss the results and plot them
 
-We try to analyse the spatial dependence through a Variogram Cloud, using the Robust Estimators (since the classical one might consider outliers those values which are not necessarily outliers)
+We try to analyse the spatial dependence through a Variogram Cloud, using the Robust Estimator (since the Classical one might consider outliers some values which are not necessarily outliers)
 
 ```{r results='hide'}
 vario.cloud.robust <- variog(geodata = geodataset.residuals, option = "cloud", estimator.type = "modulus")
@@ -151,7 +152,7 @@ plot(vario.cloud.robust, main = "CLOUD", cex.main = 1, cex.lab = 1)
 ```
 
 The variability at small distances appears a bit greater than that for larger distances. 
-=> We reduce the density of the plot by reducing the maximum distance over which the variance are calculate. 
+=> We reduce the density of the plot by reducing the maximum distance over which the variances are calculated. 
 
 ```{r results='hide'}
 dist.max.data  <- max(vario.cloud.robust$u)/2
@@ -161,6 +162,8 @@ vario.cloud.robust <- variog(geodata = geodataset.residuals,option = "cloud", es
 plot(vario.cloud.robust, main = "CLOUD", cex.main = 1, cex.lab = 1)
 ```
 
+We also have a look at the boxplots:
+
 ```{r results='hide' }
 
 vario.bc.robust <- variog(geodata = geodataset.residuals, option = "bin",bin.cloud = TRUE, pairs.min = 30, max.dist = dist.max.data, estimator.type = "modulus")
@@ -168,26 +171,17 @@ vario.bc.robust <- variog(geodata = geodataset.residuals, option = "bin",bin.clo
 plot(vario.bc.robust, bin.cloud = TRUE, cex.lab = 1, main = "\nBINNED BOXPLOTS",cex.main = 1)
 ```
 
-```{r  }
-# round(vario.bc.robust$bins.lim, 2)
-```
-
 ```{r results='hide' }
 vario.bc.robust$ind.bin
 ```
 
-=> All the bins have at least pairs.min=30 observations each, indeed they have:
+=> All the bins have at least $pairs.min=30$ observations each, indeed they have:
 
-```{r  results='hide'}
+```{r}
 vario.bc.robust$n
 ```
 
-Empirical Variogram
-```{r eval=FALSE, include=FALSE, results='hide'}
-vario.b.classical <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "classical",uvec = seq(1, dist.max.data, l = 13))
-
-plot(vario.b.classical, main = "EMPIRICAL VARIOGRAM (Classical)\nBINNED",cex.main = 1, cex.lab = 1, cex = 1, pch = 16)
-```
+Therefore the Empirical Variogram is:
 
 ```{r results='hide' }
 vario.b.robust <- variog(geodata = geodataset.residuals, option = "bin",pairs.min = 30, max.dist = dist.max.data, estimator.type = "modulus",uvec = seq(1, dist.max.data, l = 13))
@@ -195,7 +189,7 @@ vario.b.robust <- variog(geodata = geodataset.residuals, option = "bin",pairs.mi
 plot(vario.b.robust, main = "EMPIRICAL VARIOGRAM (Robust)\nBINNED",cex.main = 1, cex.lab = 1, cex = 1, pch = 16)
 ```
 
-In the variogram of the residuals the values increases until certain distance, and then they keep constant. That's ok since it's the behaviour that we expect from a stationary variogram.
+From what we can observe the variogram of the residuals the values increases until certain distance, and then they keep constant. That's ok since it's the behaviour that we expect from a stationary variogram.
 
 \newpage
 
@@ -203,24 +197,9 @@ In the variogram of the residuals the values increases until certain distance, a
 
 To check the hypothesis of the spatial independence we use a Monte Carlo approach 
 
-```{r eval=FALSE, include=FALSE}
-for( i in 1:100){
-  set.seed(i) #fix the seed
-  indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 3000)
-  # plot(vario.b.robust, envelope = indep.env, main = "CONFIDENCE BANDS FOR INDEPENDENT MODEL",lwd = 2, pch = 16)
-  
-  cat(i, ", ")
-
-  if( prod(vario.b.robust$v > indep.env$v.lower+1) ){
-    break
-  }
-}
-
-```
-
 ```{r  }
 set.seed(41) #fix the seed
-indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 3000)
+indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 1500)
 plot(vario.b.robust, envelope = indep.env, main = "CONFIDENCE BANDS FOR INDEPENDENT MODEL",lwd = 2, pch = 16)
 ```
 
@@ -383,7 +362,7 @@ The two fitted models with the highest loglikelihood are the Matern model and th
 ### a. Compare both kriging predictions using cross-validation, and propose the best model.
 ### b. Show the predictions and their standard errors. 
 
-First werate a grid where we'll perform our kriging predicitons
+First generate a grid where we'll perform our kriging predictions
 
 ```{r  }
 rnx <- range(geodataset$coords[,1]) #Minimum and maximum of the latitude
@@ -401,15 +380,14 @@ points(dsgr.grid, pch = 19, col = 4, cex = 0.25)
 
 #### Gaussian
 
-Let's try using the gaussian model to do our prediction step:
+Let's try using the Gaussian model to do our prediction step:
 
 ```{r  }
 kc.gaussian<-krige.conv(geodataset,locations= dsgr.grid,
                         krige = krige.control(type.krige="OK",obj.m = lk.gaussian, trend.l="2nd",trend.d= "2nd"))
 
-image(kc.gaussian,xlim=range(poly84$x),ylim=range(poly84$y), borders = poly84)
+image(kc.gaussian,xlim=range(poly84$x), ylim=range(poly84$y), borders = poly84)
 ```
-
 
 ```{r  }
 contour(kc.gaussian,filled= TRUE,
