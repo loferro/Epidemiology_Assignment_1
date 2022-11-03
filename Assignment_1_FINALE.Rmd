@@ -269,7 +269,7 @@ windows(); eyefit(variogramma, silent = FALSE)
 ```
 
 
-We'll use a Maximum Likelihood approach
+We'll use a Restricted Maximum Likelihood approach
 
 ```{r include=FALSE}
 lk.exponential <- likfit(geodataset.residuals, cov.model = "exponential", ini = c(91, 25), lik.method = "REML")
@@ -347,10 +347,25 @@ temp.lk = data.frame( model = c("exponential",
                                )
 )
 
-temp.lk[ order(temp.lk$loglikelihood, decreasing = T),]
+temp.lk.2 = temp.lk[ order(temp.lk$loglikelihood, decreasing = T),]
+rownames(temp.lk.2)= c("1°", "2°", '3°', '4°')
+temp.lk.2
 ```
 
 The two fitted models with the highest loglikelihood are the Matern model and the Gaussian model. So we'll use these two to perform the kriging prediction step.
+
+Let's have a look again at the result of the two fits:
+
+```{r}
+lk.gaussian
+cat("\n ---------------------------------- \n \n")
+lk.matern
+```
+
+Both models have a nugget effect $\tau^2 \approx 41$ and a partial sill $\sigma^2 \approx 66.7$.
+
+And they have almost the same Effective Range $\approx 9.7-9.9$, but the Gaussian model has a higher range than the Matern one: $\phi_G=5.601$ vs $\phi_M = 0.5757$ thanks to the presence of a quite high value of the smoothness parameter: $k\approx24.1$
+
 
 \newpage
 ## 6) Predict the elevations along all the area of study using the two variogram selected in point 4. Discuss the type of kriging chosen:
