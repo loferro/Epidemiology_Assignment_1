@@ -389,20 +389,20 @@ lines(poly84[,1:2], type="l")
 points(dsgr.grid, pch = 19, col = 4, cex = 0.25)
 ```
 
-#### Gaussian
+The residuals used in the variogram estimation were obtained after a quadratic model, so we'll perform a Universal Kriging on the original data using a $2^{nd}$ order trend.
 
-Let's try using the Gaussian model to do our prediction step:
+#### Gaussian
+\
+Let's first try using the Gaussian model to do our prediction step:
+
 
 ```{r  results = "hide" }
 kc.gaussian<-krige.conv(geodataset,locations= dsgr.grid,
                         krige = krige.control(type.krige="OK",obj.m = lk.gaussian, trend.l="2nd",trend.d= "2nd"))
 image(kc.gaussian,xlim=range(poly84$x), ylim=range(poly84$y), borders = poly84, coords.data = as.matrix(dataset.new[,c(1,2)]), main = "Predicted elevation of the islet")
-
 ```
 
-```{r  results = "hide"}
-#contour(kc.gaussian,filled= TRUE,coords.data=geodataset$coords, col=terrain.colors(31), xlim=range(poly84$x), ylim=range(poly84$y), borders = poly84, main = "Plot of predictions")
-
+```{r  }
 contour(kc.gaussian,filled= TRUE,val=sqrt(kc.gaussian$krige.var), coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y), col = gray(seq(1, 0.1, l = 30)), main="Standard Deviation of the prediction",borders = poly84)
 ```
 
