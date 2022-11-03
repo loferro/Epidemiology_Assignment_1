@@ -57,7 +57,7 @@ rbPal_neg <- colorRampPalette(c('Red','pink'))
 col_scale[dataset$data<0] = rbPal_neg(10)[as.numeric(cut(dataset$data[dataset$data<0],breaks = 10))]
 plot(dataset, pch = 20, col=col_scale,  ylim = c(-90, 89), main = "Elevation of the islet")
 lines(poly84, lwd=2)
-legend('bottomright', pch = 16, c("-9.5", "0", "7", "18", "39.6"), col=c("#FF0000", "#FF959D", "#00E200" ,"#005500", "#001C00"))
+legend('bottomright', pch = 16, c("-9.5", "0", "7", "18", "39.6"), col=c("#FF0000", "#FF959D", "#00E200" ,"#005500", "#001C00"), title = "Altitude")
 ```
 
 
@@ -82,7 +82,6 @@ The process doesn't seem stationary, indeed there is a clear quadratic trend alo
 
 ```{r  }
 lm <- lm(data ~ x + y + I(x^2) + I(y^2), data = dataset)
-lm <- lm(data ~ x + y + I(x^2), data = dataset)
 summary(lm)
 ```
 
@@ -235,7 +234,7 @@ The directional variograms don't seem to be perfectly overlapping: they might ha
 
 Let's also analyse the range observing the Rose Diagram:
 
-```{r  results='hide'}
+```{r  results='hide', out.width = '60%'}
 source("RoseDiagram.R")
 
 NumCases = length(variod$`0`)
@@ -325,10 +324,10 @@ env.matern <- variog.model.env(geodataset.residuals, obj.variog = variogramma, m
 
 ```{r  }
 par(mfrow = c(1, 4))
-plot(variogramma, main = "Exponential", lwd = 2, pch = 16, envelope = env.exponential)
-plot(variogramma, main = "Gaussian", lwd = 2, pch = 16, envelope = env.gaussian, cex.main = 1)
-plot(variogramma, main = "Spherical", lwd = 2, pch = 16, envelope = env.spherical, cex.main = 1)
-plot(variogramma, main = "Matern", lwd = 2, pch = 16, envelope = env.matern, cex.main = 1)
+plot(variogramma, main = "Exponential", lwd = 2, pch = 16, envelope = env.exponential, xlim = c(0,120), ylim = c(0,500))
+plot(variogramma, main = "Gaussian", lwd = 2, pch = 16, envelope = env.gaussian, cex.main = 1, xlim = c(0,120), ylim = c(0,500))
+plot(variogramma, main = "Spherical", lwd = 2, pch = 16, envelope = env.spherical, cex.main = 1, xlim = c(0,120), ylim = c(0,500))
+plot(variogramma, main = "Matern", lwd = 2, pch = 16, envelope = env.matern, cex.main = 1, xlim = c(0,120), ylim = c(0,500))
 ```
 
 All the simulated variograms contain the empirical variogram so we don't have evidence to exclude any model.
@@ -356,9 +355,11 @@ The two fitted models with the highest loglikelihood are the Matern model and th
 
 Let's have a look again at the result of the two fits:
 
-```{r}
+```{r }
 lk.gaussian
-cat("\n ---------------------------------- \n \n")
+```
+
+```{r }
 lk.matern
 ```
 
@@ -395,14 +396,14 @@ Let's try using the Gaussian model to do our prediction step:
 ```{r  results = "hide" }
 kc.gaussian<-krige.conv(geodataset,locations= dsgr.grid,
                         krige = krige.control(type.krige="OK",obj.m = lk.gaussian, trend.l="2nd",trend.d= "2nd"))
+image(kc.gaussian,xlim=range(poly84$x), ylim=range(poly84$y), borders = poly84, coords.data = as.matrix(dataset.new[,c(1,2)]), main = "Predicted elevation of the islet")
 
-image(kc.gaussian,xlim=range(poly84$x), ylim=range(poly84$y), borders = poly84)
 ```
 
 ```{r  results = "hide"}
-contour(kc.gaussian,filled= TRUE,coords.data=geodataset$coords, col=terrain.colors(31), xlim=range(poly84$x), ylim=range(poly84$y), borders = poly84, main = "Plot of predictions")
+#contour(kc.gaussian,filled= TRUE,coords.data=geodataset$coords, col=terrain.colors(31), xlim=range(poly84$x), ylim=range(poly84$y), borders = poly84, main = "Plot of predictions")
 
-contour(kc.gaussian,filled= TRUE,val=sqrt(kc.gaussian$krige.var), coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y), col = gray(seq(1, 0.1, l = 30)), main="Plot of Standard Deviation",borders = poly84)
+contour(kc.gaussian,filled= TRUE,val=sqrt(kc.gaussian$krige.var), coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y), col = gray(seq(1, 0.1, l = 30)), main="Standard Deviation of the prediction",borders = poly84)
 ```
 
  
@@ -428,16 +429,15 @@ data.frame( index = c("VC1", "VC2", "VC3"), value = c(VC1.gaussian, VC2.gaussian
 ```{r  results = "hide" }
 kc.matern<-krige.conv(geodataset,locations= dsgr.grid,
 krige = krige.control(type.krige="OK",obj.m = lk.matern,  trend.l="2nd", trend.d= "2nd"))
-image(kc.matern, xlim=range(poly84$x),ylim=range(poly84$y), borders = poly84)
+image(kc.matern, xlim=range(poly84$x),ylim=range(poly84$y), borders = poly84, coords.data = as.matrix(dataset.new[,c(1,2)]), main = "Predicted elevation of the islet")
 ```
 ```{r  }
-contour(kc.matern,filled= TRUE,
-coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y), col=terrain.colors(30), borders = poly84)
+#contour(kc.matern,filled= TRUE, coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y), col=terrain.colors(30), borders = poly84)
 ```
 
 ```{r  }
 contour(kc.matern,filled= TRUE,val=sqrt(kc.matern$krige.var),
-coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y), col = gray(seq(1, 0.1, l = 30)), borders = poly84[,1:3])
+coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y), col = gray(seq(1, 0.1, l = 30)), borders = poly84[,1:3], main  = "Standard Deviation of the prediction")
 ```
 
 ```{r results = "hide"  }
