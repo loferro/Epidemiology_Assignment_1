@@ -199,13 +199,13 @@ To check the hypothesis of the spatial independence we use a Monte Carlo approac
 
 ```{r eval=FALSE,  ALSE, include=FALSE}
 for( i in 41:100){
-  set.seed(i) #fix the seed
+  set.seed(i*100) #fix the seed
   indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 2000)
   # plot(vario.b.robust, envelope = indep.env, main = "CONFIDENCE BANDS FOR INDEPENDENT MODEL",lwd = 2, pch = 16)
   
   cat(i, ", ")
 
-  if( prod(vario.b.robust$v > indep.env$v.lower+1) ){
+  if( prod(vario.b.robust$v > indep.env$v.lower+1) & prod(vario.b.robust$v < indep.env$v.upper-1) ){
     break
   }
 }
