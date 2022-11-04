@@ -188,7 +188,7 @@ vario.b.robust <- variog(geodata = geodataset.residuals, option = "bin",pairs.mi
 plot(vario.b.robust, main = "EMPIRICAL VARIOGRAM (Robust)\nBINNED",cex.main = 1, cex.lab = 1, cex = 1, pch = 16)
 ```
 
-From what we can observe the variogram of the residuals the values increases until certain distance, and then they keep constant. That's ok since it's the behaviour that we expect from a stationary variogram.
+From what we can observe in the variogram of the residuals, the values increase until a certain distance, and then they are constant. That's ok since it's the behaviour that we expect from a stationary variogram.
 
 \newpage
 
@@ -198,7 +198,7 @@ To check the hypothesis of the spatial independence we use a Monte Carlo approac
 
 ```{r  }
 set.seed(5000) #fix the seed
-indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 1500)
+indep.env <- variog.mc.env(geodataset.residuals, obj.variog = vario.b.robust,nsim = 2000)
 plot(vario.b.robust, envelope = indep.env, main = "CONFIDENCE BANDS FOR INDEPENDENT MODEL",lwd = 2, pch = 16)
 ```
 
@@ -230,7 +230,7 @@ plot(variod, lyt = 2, legend = FALSE)
 legend(x = "bottomright", inset = 0.01, lty = c(1, 2, 3, 4),col = c("black", "red", "green", "blue"), legend = c("0º","45º", "90º", "135º"), cex = 0.5)
 ```
 
-The directional variograms don't seem to be perfectly overlapping: they might have the a different sill, in particular the variogram seems to have a higher value along the 90° direction => Geometrical anistropy
+The directional variograms don't seem to be perfectly overlapping: they might have a different sill, in particular the variogram seems to have a higher value along the 90° direction => Geometrical anistropy
 
 Let's also analyse the range observing the Rose Diagram:
 
@@ -330,7 +330,7 @@ plot(variogramma, main = "Spherical", lwd = 2, pch = 16, envelope = env.spherica
 plot(variogramma, main = "Matern", lwd = 2, pch = 16, envelope = env.matern, cex.main = 1, xlim = c(0,120), ylim = c(0,500))
 ```
 
-All the simulated variograms contain the empirical variogram so we don't have evidence to exclude any model.
+All the simulated variograms contain the empirical variogram, so we don't have evidence to exclude any model.
 
 Let's compare the different models
 ```{r  }
