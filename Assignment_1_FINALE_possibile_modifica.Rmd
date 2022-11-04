@@ -9,7 +9,6 @@ output:
 subtitle: Elevation of a small islet in Delta d’Ebre
 ---
 
-
 ```{r include=FALSE}
 knitr::opts_chunk$set( echo=F )
 knitr::opts_chunk$set(out.width = '70%')
@@ -60,6 +59,7 @@ lines(poly84, lwd=2)
 legend('bottomright', pch = 16, c("-9.5", "0", "7", "18", "39.6"), col=c("#FF0000", "#FF959D", "#00E200" ,"#005500", "#001C00"), title = "Altitude")
 ```
 
+\newpage 
 
 We also look at the distribution in relation to the x-coordinates (E-W) and y-coordinates(N-S).
 
@@ -151,7 +151,7 @@ plot(vario.cloud.robust, main = "CLOUD", cex.main = 1, cex.lab = 1)
 ```
 
 The variability at small distances appears a bit greater than that for larger distances. 
-=> We reduce the density of the plot by reducing the maximum distance over which the variances are calculated. 
+Therefore we reduce the density of the plot by reducing the maximum distance over which the variances are calculated. 
 
 ```{r results='hide'}
 dist.max.data  <- max(vario.cloud.robust$u)/2
@@ -176,7 +176,7 @@ plot(vario.bc.robust, bin.cloud = TRUE, cex.lab = 1, main = "\nBINNED BOXPLOTS",
 vario.bc.robust$ind.bin
 ```
 
-=> All the bins have at least $pairs.min=30$ observations each, indeed they have:
+All the bins have at least $pairs.min=30$ observations each, indeed they have:
 
 ```{r}
 vario.bc.robust$n
@@ -232,7 +232,7 @@ plot(variod, lyt = 2, legend = FALSE)
 legend(x = "bottomright", inset = 0.01, lty = c(1, 2, 3, 4),col = c("black", "red", "green", "blue"), legend = c("0º","45º", "90º", "135º"), cex = 0.5)
 ```
 
-The directional variograms don't seem to be perfectly overlapping: they might have a different sill, in particular the variogram seems to have a higher value along the 90° direction => Geometrical anistropy
+The directional variograms don't seem to be perfectly overlapping: they might have a different sill, in particular the variogram seems to have a higher value along the 90° direction, so we have Geometrical Anistropy.
 
 Let's also analyse the range observing the Rose Diagram:
 
@@ -250,9 +250,9 @@ crit.val = 120)
 ```
 
 
-We notice that the Rose diagram is not perfectly circular: it is slightly elliptical, with major range in the 45° and 90° direction => Zonal anistropy.
+We notice that the Rose diagram is not perfectly circular: it is slightly elliptical, with major range in the 45° and 90° direction, so we also have Zonal Anistropy.
 
-=> In conclusion we have a combined anisotropy, so we can't make the assumption of isotropic process, which is necessary for the correct use of the kriging techniques, since the theoretical variograms used for krigring are based on isotropic models.
+In conclusion this is an example of combined anisotropy, so we can't make the assumption of isotropic process, which is necessary for the correct use of the kriging techniques, since the theoretical variograms used for krigring are based on isotropic models.
 
 \newpage
 ## 5) Propose four theoretical variograms and estimate the parameters via restricted maximum likelihood or weighed least square. Select the two variograms which best fit the data. Explain the parameters of the chosen variogram (sill, nugget, range and kappa).
@@ -426,7 +426,7 @@ Therefore we decide to choose the Matern model as it has a lower VC3, a VC1 clos
 
 \newpage
 
-Let's proceed to visualize the predictions of the Matern Kriging and their standard errors 
+Let's proceed to visualize the predictions of the Matern Kriging and their standard errors:
 
 ```{r  results = "hide", out.width = '70%'}
 kc.matern<-krige.conv(geodataset,locations= dsgr.grid,
@@ -438,6 +438,10 @@ image(kc.matern, xlim=range(poly84$x),ylim=range(poly84$y), borders = poly84, co
 contour(kc.matern,filled= TRUE,val=sqrt(kc.matern$krige.var),
 coords.data=geodataset$coords,xlim=range(poly84$x),ylim=range(poly84$y), col = gray(seq(1, 0.1, l = 30)), borders = poly84[,1:3], main  = "Standard Deviation of the predictions")
 ```
+
+From the prediction plot we deduce that there's a mountain range on the north coast of the islet and a plain in the center and the south.
+
+We also observe that, coherently with the theory, the variances of the prediction are lower near the observations.
 
 ```{r  }
 # save.image("Data.RData")
