@@ -1,6 +1,6 @@
 <h1 align="left"> Geostatistics Kriging Analysis of the Elevation of the Delta d'Ebre Islet </h1>
 
-<h4 align="left">Assignment for the course of  Spatial Epidemiology at Universitat Politecnica de Catalunya, 2022/2023</h4>
+<h4 align="left">Assignment for the course of  Spatial Epidemiology at Universitat Politècnica de Catalunya, 2022/2023</h4>
 
 <p align="left"> Team members:
 <ul>
