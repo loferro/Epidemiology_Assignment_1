@@ -20,7 +20,7 @@ knitr::opts_chunk$set(message = FALSE)
 
 # Description
 
-The data were collected during a study of the settlement pattern of common terns on a small islet in the Delta d’Ebre (Hernandez and Ruiz, range3), particularly in the mouths of the Ebre river. The islet was inspected at two-day intervals throughout the range0 breeding season. The data include the location of each nest, its elevation above sea level, and elevations at a number of additional points (points without nest) on the islet. In the file called elevationsIslet.txt, contains the information of the coordinates and elevation above sea, and in file, called poly84.txt contains the coordinates of the borders of the islet. The aim is to predict the elevation above sea level along the small islet using a kriging interpolation. 
+The data were collected during a study of the settlement pattern of common terns on a small islet in the Delta d’Ebre (Hernandez and Ruiz), particularly in the mouths of the Ebre river. The islet was inspected at two-day intervals throughout the breeding season. The data include the location of each nest, its elevation above sea level, and elevations at a number of additional points (points without nest) on the islet. In the file called elevationsIslet.txt, contains the information of the coordinates and elevation above sea, and in file, called poly84.txt contains the coordinates of the borders of the islet. The aim is to predict the elevation above sea level along the small islet using a kriging interpolation. 
 
 ```{r, include=FALSE}
 poly84 <- read.delim("data/poly84.txt")
